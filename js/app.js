@@ -38,9 +38,16 @@ const fmt = s => { s = Math.ceil(s); const m = Math.floor(s / 60), r = s % 60; r
 
 // ---------- voz ----------
 let voice = null;
+const FEMALE = /paulina|m[oó]nica|helena|laura|sabina|dalia|elvira|elena|lucia|luc[ií]a|marisol|soledad|paloma|angelica|ang[eé]lica|esperanza|carmen|francisca|isabela|camila|valentina|catalina|ximena|ver[oó]nica|marta|female|mujer|femenin/i;
+const MALE = /jorge|juan|diego|pablo|ra[uú]l|[aá]lvaro|carlos|enrique|andr[eé]s|alonso|tom[aá]s|gonzalo|jos[eé]|male(?!.*female)|hombre|masculin/i;
+const esVoices = () => ("speechSynthesis" in window ? speechSynthesis.getVoices() : []).filter(v => v.lang && v.lang.toLowerCase().startsWith("es"));
 function pickVoice() {
-  const vs = speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith("es"));
-  voice = vs.find(v => /mx|us|419/i.test(v.lang)) || vs[0] || null;
+  const vs = esVoices();
+  const chosen = S.voiceName && vs.find(v => v.name === S.voiceName);
+  const fem = vs.filter(v => FEMALE.test(v.name) && !/\bmale\b/i.test(v.name));
+  const neutral = vs.filter(v => !MALE.test(v.name));
+  const latam = l => l.find(v => /mx|us|419/i.test(v.lang)) || l[0];
+  voice = chosen || latam(fem) || latam(neutral) || vs[0] || null;
 }
 if ("speechSynthesis" in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
 function speak(text, onend) {
@@ -48,7 +55,7 @@ function speak(text, onend) {
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   if (voice) u.voice = voice;
-  u.lang = voice ? voice.lang : "es-ES"; u.rate = 0.9; u.pitch = 0.6;
+  u.lang = voice ? voice.lang : "es-ES"; u.rate = 0.88; u.pitch = 1.05;
   u.onend = () => onend && onend();
   speechSynthesis.speak(u);
   return true;
@@ -229,7 +236,7 @@ function viewCase(v) {
     <div class="case-left">
       <h2>La víctima</h2>
       <div class="victim"><div class="portrait big" style="--c:#9b8b6a">EM</div>
-      <div><h3>${esc(C.victim)}</h3><p>Viuda, coleccionista de arte, dueña de esta casa. Murió la noche del 31 de octubre de ${C.year}, durante el Baile de Ánimas.</p></div></div>
+      <div><h3>${esc(C.victim)}</h3><p>Viuda, coleccionista de arte, dueña de esta casa. Murió la noche del 24 de octubre de ${C.year}, durante el Baile de Ánimas.</p></div></div>
       <h2>Lo que deben descubrir</h2>
       <ol class="goals"><li><b>Quién</b> la mató</li><li><b>Cómo</b> lo hizo</li><li><b>Por qué</b></li><li>Bonus: el <b>cómplice</b> y el <b>origen del veneno</b></li></ol>
       <h2>Cómo se juega</h2>
@@ -357,7 +364,7 @@ function viewTimeline(v) {
   autos.forEach(a => (a.timeline || []).forEach(([t, txt]) => items.push({ t, txt, src: a.title, color: "#cfc3a3" })));
   claimed.filter(e => S.claims[e.code].public).forEach(e => (e.timeline || []).forEach(([t, txt]) => items.push({ t, txt, src: e.title, color: team(S.claims[e.code].team).color })));
   items.sort((a, b) => tkey(a.t) - tkey(b.t));
-  v.innerHTML = `<section class="timeline"><h2>La noche del 31 de octubre de ${C.year}</h2>
+  v.innerHTML = `<section class="timeline"><h2>La noche del 24 de octubre de ${C.year}</h2>
     ${items.length ? `<ol>${items.map(i => `<li style="--c:${i.color}"><time>${i.t}</time><div><p>${esc(i.txt)}</p><small>${esc(i.src)}</small></div></li>`).join("")}</ol>` : `<p class="center">Aún no hay hechos públicos.</p>`}
     <p class="small center">Solo aparecen hechos de evidencias públicas.</p></section>`;
 }
@@ -483,6 +490,7 @@ function hostPanel() {
     <div class="host-grid">${S.teams.map(t => `<span style="color:${t.color}">${esc(t.name)}</span><button class="btn ghost" data-p="${t.id}" data-v="1">+1</button><button class="btn ghost" data-p="${t.id}" data-v="-1">−1</button>`).join("")}</div>
     <h3>Opciones</h3>
     <label class="opt"><input type="checkbox" id="o-tts" ${S.tts ? "checked" : ""}> Voz del fantasma (narración en voz alta)</label>
+    <label class="opt">Voz: <select id="o-voice">${esVoices().map(v => `<option value="${esc(v.name)}" ${voice && voice.name === v.name ? "selected" : ""}>${esc(v.name)} (${esc(v.lang)})</option>`).join("") || "<option>Sin voces en español</option>"}</select> <button class="btn ghost" id="o-vtest">Probar</button></label>
     <label class="opt"><input type="checkbox" id="o-music" ${S.music ? "checked" : ""}> Ambiente y efectos de sonido</label>
     <label class="opt"><input type="checkbox" id="o-rev" ${S.revealOnPhase ? "checked" : ""}> Revelar evidencias a todos al cambiar de fase</label>
     <div class="host-links"><a href="#/guia" target="_blank">Guía y solución</a> · <a href="#/imprimir" target="_blank">Imprimir pistas</a> · <button class="linkish" id="h-reset">Reiniciar juego</button></div>`, "host");
@@ -494,6 +502,8 @@ function hostPanel() {
   $("#h-end", m.el).onclick = () => { if (confirm("¿Detener el reloj y pasar a la acusación?")) { m.close(); finishGame(); } };
   $("#h-pub", m.el).onclick = () => { Object.values(S.claims).forEach(c => c.public = true); save(); m.close(); renderMain(); };
   m.el.querySelectorAll("[data-p]").forEach(b => b.onclick = () => { addPts(b.dataset.p, +b.dataset.v, "Presentador"); renderMain(); hostPanel(); m.close(); });
+  $("#o-voice", m.el).onchange = e => { S.voiceName = e.target.value; save(); pickVoice(); };
+  $("#o-vtest", m.el).onclick = () => { const t = S.tts; S.tts = true; speak("Soy Elvira Montenegro. Esta noche, veinticuatro de octubre, me ayudarán a descansar."); S.tts = t; };
   $("#o-tts", m.el).onchange = e => { S.tts = e.target.checked; if (!S.tts) hush(); save(); };
   $("#o-music", m.el).onchange = e => { S.music = e.target.checked; S.music ? SFX.startAmbient() : (SFX.stopAmbient(), SFX.heartbeat(false), heartState = 0); save(); };
   $("#o-rev", m.el).onchange = e => { S.revealOnPhase = e.target.checked; save(); };

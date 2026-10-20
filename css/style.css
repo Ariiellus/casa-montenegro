@@ -201,3 +201,4 @@ body.phone{font-size:18px}
  .guide-wrap{color:#000}.guide-wrap h2{color:#000}
 }
 @media (max-width:900px){.case,.ghost,.acc-cols{grid-template-columns:1fr}.top{grid-template-columns:1fr;text-align:center}.scores{justify-content:center}main{padding:1rem}.cards{grid-template-columns:1fr}}
+.opt select{background:#1a1414;color:inherit;border:1px solid #5a4a3a;padding:.3rem;font:inherit;max-width:60%}

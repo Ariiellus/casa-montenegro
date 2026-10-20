@@ -17,7 +17,7 @@ window.CASE = {
       id: "busqueda", name: "Fase I · La búsqueda", at: 0,
       narration: [
         "Bienvenidos, vivos. No se asusten por el frío: soy yo.",
-        "Me llamo Elvira Montenegro. Esta casa fue mía. La noche del 31 de octubre de 1957, durante el Baile de Ánimas, alguien me mató aquí dentro.",
+        "Me llamo Elvira Montenegro. Esta casa fue mía. La noche del 24 de octubre de 1957, durante el Baile de Ánimas, alguien me mató aquí dentro.",
         "La muerte me robó el recuerdo de esa noche. No sé quién fue. Por eso no puedo irme.",
         "Mis secretos siguen escondidos entre estas paredes: entre los libros, bajo las velas, detrás de los cuadros, entre las plantas y hasta en el tablero de ajedrez.",
         "Cada pista guarda una pregunta. Respóndanla y les mostraré lo que esconde.",
@@ -204,7 +204,7 @@ window.CASE = {
       hint: "Entre azúcar, sal y harina, una carta amarga se esconde en la cocina.",
       q: { type: "Matemática", text: "Un bate y una pelota cuestan 1,10 en total. El bate cuesta 1,00 más que la pelota. ¿Cuánto cuesta la pelota?", answers: ["0.05", "0,05", ".05", ",05", "5 centavos", "cinco centavos", "5"] },
       html: `<h3>Para Bruno Salazar</h3>
-<p class="hand">Bruno: después de veinte años, he decidido prescindir de sus servicios a partir del 1 de noviembre. Le ruego no lo tome como algo personal.<br>— E. Montenegro, 29 de octubre de 1957</p>`,
+<p class="hand">Bruno: después de veinte años, he decidido prescindir de sus servicios a partir del 1 de noviembre. Le ruego no lo tome como algo personal.<br>— E. Montenegro, 20 de octubre de 1957</p>`,
       timeline: []
     },
     {
@@ -220,7 +220,7 @@ window.CASE = {
       code: "AJ18", seal: "ALFIL", title: "Página del diario (22:00)", kind: "Acertijo · Ajedrez", room: "Sala", spot: "Debajo del rey o la dama del tablero de ajedrez", puzzle: true,
       hint: "El rey nunca se mueve más de un paso… pero sabe lo que hay debajo de sus pies.",
       q: { type: "Lógica", text: "El cofre del ajedrez se abre con un número.\n♜ + ♜ + ♜ = 15\n♜ + ♞ + ♞ = 11\n♞ + ♝ × ♝ = 12\n♛ − ♜ = 4\n¿Cuánto vale ♛ + ♞ × ♝ ?", answers: ["18"] },
-      html: `<h3>Diario de Elvira · 31 de octubre, 22:00</h3>
+      html: `<h3>Diario de Elvira · 24 de octubre, 22:00</h3>
 <p class="hand">Discutí con Teo en el estudio. Le grité: «¡Falsificaciones bajo mi propio techo!». Juró que él no cambia los cuadros, que <b>alguien de esta casa</b> le entrega los originales.<br><br>
 Guardé el libro de cuentas en la caja fuerte. Para no olvidar la combinación la escondí en un acertijo de números, como me enseñó papá.</p>`,
       timeline: [["22:00", "Elvira y Teo discuten por los cuadros falsos"]]
@@ -303,7 +303,7 @@ Guardé el libro de cuentas en la caja fuerte. Para no olvidar la combinación l
       code: "DI06", seal: "BOMBON", title: "Última entrada del diario", kind: "Acertijo · Diario con candado", room: "Patio", spot: "Dentro de una caja o junto a una vela del patio", puzzle: true,
       hint: "Mi diario lo cuida quien siempre me cuidó. ¿Recuerdas su nombre?",
       q: { type: "Acertijo", text: "El diario de Elvira tiene un candado de 6 letras. Ella decía que la llave la guardaba su fiel compañero. ¿Cuál es la clave?", answers: ["bombon"] },
-      html: `<h3>Diario de Elvira · 31 de octubre, 23:10</h3>
+      html: `<h3>Diario de Elvira · 24 de octubre, 23:10</h3>
 <p class="hand">Esta tarde encontré el libro de cuentas escondido en el <b>cuarto de servicio</b>, con unas iniciales que conozco demasiado bien. Teo no lo hacía solo.<br><br>
 Mañana a primera hora le escribiré al inspector Ríos. Esta noche, como siempre, beberé mi té y fingiré no saber nada.<br><br>
 Bombón, tú me entiendes.</p>`,
