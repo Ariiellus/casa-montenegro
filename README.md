@@ -8,3 +8,7 @@ Mini webapp para un juego de misterio en casa (2 equipos, 30–60 min). Sin depe
 - `#/guia` guía del presentador con escondites editables y la solución (spoilers).
 
 Toda la historia está en `js/data.js`. Local: `python3 -m http.server 8080`.
+
+## Voz del fantasma
+
+Las narraciones están pre-grabadas en `audio/voz/` con [Piper TTS](https://github.com/rhasspy/piper), voz `es_AR-daniela-high` (dataset [OpenSLR 61](https://www.openslr.org/61/), licencia CC BY-SA 4.0). Si cambias textos en `js/data.js`, regenera con `pip install piper-tts` y `python3 tools/gen_voice.py lines.json` (lista JSON de los textos). Los textos sin grabación usan la voz del sistema; en el panel del presentador se puede elegir otra voz.

@@ -50,17 +50,31 @@ function pickVoice() {
   voice = chosen || latam(fem) || latam(neutral) || vs[0] || null;
 }
 if ("speechSynthesis" in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+let clip = null;
+const recorded = text => !S.voiceName && window.VOZ && window.VOZ[text];
 function speak(text, onend) {
-  if (!S.tts || !("speechSynthesis" in window)) { onend && setTimeout(onend, 0); return false; }
-  speechSynthesis.cancel();
+  hush();
+  if (!S.tts) { onend && setTimeout(onend, 0); return false; }
+  const src = recorded(text);
+  if (src) {
+    const a = clip = new Audio(src);
+    let ended = false; const end = () => { if (ended || clip !== a) return; ended = true; onend && onend(); };
+    a.onended = end; a.onerror = end;
+    a.play().catch(end);
+    return true;
+  }
+  if (!("speechSynthesis" in window)) { onend && setTimeout(onend, 0); return false; }
   const u = new SpeechSynthesisUtterance(text);
   if (voice) u.voice = voice;
-  u.lang = voice ? voice.lang : "es-ES"; u.rate = 0.88; u.pitch = 1.05;
+  u.lang = voice ? voice.lang : "es-MX"; u.rate = 0.88; u.pitch = 1.05;
   u.onend = () => onend && onend();
   speechSynthesis.speak(u);
   return true;
 }
-const hush = () => { if ("speechSynthesis" in window) speechSynthesis.cancel(); };
+const hush = () => {
+  if (clip) { const a = clip; clip = null; a.onended = a.onerror = null; a.pause(); }
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+};
 
 // ---------- UI helpers ----------
 function toast(html, color) {
@@ -490,7 +504,7 @@ function hostPanel() {
     <div class="host-grid">${S.teams.map(t => `<span style="color:${t.color}">${esc(t.name)}</span><button class="btn ghost" data-p="${t.id}" data-v="1">+1</button><button class="btn ghost" data-p="${t.id}" data-v="-1">−1</button>`).join("")}</div>
     <h3>Opciones</h3>
     <label class="opt"><input type="checkbox" id="o-tts" ${S.tts ? "checked" : ""}> Voz del fantasma (narración en voz alta)</label>
-    <label class="opt">Voz: <select id="o-voice">${esVoices().map(v => `<option value="${esc(v.name)}" ${voice && voice.name === v.name ? "selected" : ""}>${esc(v.name)} (${esc(v.lang)})</option>`).join("") || "<option>Sin voces en español</option>"}</select> <button class="btn ghost" id="o-vtest">Probar</button></label>
+    <label class="opt">Voz: <select id="o-voice"><option value="" ${!S.voiceName ? "selected" : ""}>Elvira (voz grabada)</option>${esVoices().map(v => `<option value="${esc(v.name)}" ${S.voiceName === v.name ? "selected" : ""}>${esc(v.name)} (${esc(v.lang)})</option>`).join("")}</select> <button class="btn ghost" id="o-vtest">Probar</button></label>
     <label class="opt"><input type="checkbox" id="o-music" ${S.music ? "checked" : ""}> Ambiente y efectos de sonido</label>
     <label class="opt"><input type="checkbox" id="o-rev" ${S.revealOnPhase ? "checked" : ""}> Revelar evidencias a todos al cambiar de fase</label>
     <div class="host-links"><a href="#/guia" target="_blank">Guía y solución</a> · <a href="#/imprimir" target="_blank">Imprimir pistas</a> · <button class="linkish" id="h-reset">Reiniciar juego</button></div>`, "host");
@@ -507,7 +521,7 @@ function hostPanel() {
   $("#o-tts", m.el).onchange = e => { S.tts = e.target.checked; if (!S.tts) hush(); save(); };
   $("#o-music", m.el).onchange = e => { S.music = e.target.checked; S.music ? SFX.startAmbient() : (SFX.stopAmbient(), SFX.heartbeat(false), heartState = 0); save(); };
   $("#o-rev", m.el).onchange = e => { S.revealOnPhase = e.target.checked; save(); };
-  $("#h-reset", m.el).onclick = () => { if (confirm("¿Borrar todo el progreso y volver al inicio?")) { const keep = { tts: S.tts, music: S.music, duration: S.duration, teams: S.teams }; S = Object.assign(fresh(), keep); save(); hush(); SFX.heartbeat(false); SFX.stopAmbient(); m.close(); render(); } };
+  $("#h-reset", m.el).onclick = () => { if (confirm("¿Borrar todo el progreso y volver al inicio?")) { const keep = { tts: S.tts, music: S.music, duration: S.duration, teams: S.teams, voiceName: S.voiceName }; S = Object.assign(fresh(), keep); save(); hush(); SFX.heartbeat(false); SFX.stopAmbient(); m.close(); render(); } };
 }
 
 // ---------- celular ----------
