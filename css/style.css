@@ -197,9 +197,9 @@ body.phone{font-size:18px}
 .big-hand{font-size:2.4rem;color:#1d2a52;padding:2rem}
 @page horizontal{size:A4 landscape}
 @media print{
- body,body.print{background:#fff!important}.fog,.no-print{display:none!important}
+ html,body,body.print{background:#fff!important;min-height:0!important;height:auto!important}body.print>:not(#app){display:none!important}.fog,.no-print{display:none!important}
  .cards{padding:0;gap:.4cm}.sheet{margin:.5cm 0;break-before:page}
- .landscape{page:horizontal}.landscape .big-hand{font-size:3.4rem;line-height:1.35;padding:1.5cm 1cm}
+ .dt td{height:3.4rem}.sheet .lines{height:11cm} .landscape{page:horizontal}.landscape .big-hand{font-size:3.4rem;line-height:1.35;padding:1.5cm 1cm}
  .guide-wrap{color:#000}.guide-wrap h2{color:#000}
 }
 @media (max-width:900px){.case,.ghost,.acc-cols{grid-template-columns:1fr}.top{grid-template-columns:1fr;text-align:center}.scores{justify-content:center}main{padding:1rem}.cards{grid-template-columns:1fr}}
