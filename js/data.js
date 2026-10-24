@@ -209,7 +209,7 @@ window.CASE = {
       timeline: []
     },
     {
-      code: "RB08", next: "DI06", seal: "LAZO", title: "Retrato de Bombón", kind: "Fotografía", room: "Sala", spot: "Detrás de otro cuadro o portarretratos",
+      code: "RB08", next: "DI06", seal: "LAZO", title: "Retrato de Bombón", kind: "Fotografía", room: "Cuarto", spot: "Detrás de un cuadro o portarretratos del cuarto",
       hint: "Un fiel guardián posa en un marco. Dale la vuelta a un recuerdo.",
       q: { type: "Libros", text: "En la novela de Bram Stoker, ¿de qué región viene el conde Drácula?", answers: ["transilvania", "transylvania", "rumania", "rumanía"] },
       html: `<h3>Fotografía, 1955</h3>
@@ -236,7 +236,7 @@ Guardé el libro de cuentas en la caja fuerte. Para no olvidar la combinación l
       timeline: [["23:00", "Bruno deja la bandeja del té lista: Camila se la subirá a Elvira"], ["23:12", "Bruno toma el último tranvía"]]
     },
     {
-      code: "FP35", start: true, next: "VZ02", seal: "HUMO", title: "Fotografía del patio", kind: "Fotografía", room: "Patio", spot: "Entre las plantas o macetas del patio",
+      code: "FP35", start: true, next: "VZ02", seal: "HUMO", title: "Fotografía del patio", kind: "Fotografía", room: "Sala", spot: "Entre las hojas o en la tierra de una planta de la sala",
       hint: "Donde las hojas respiran de noche, una imagen espera entre raíces.",
       q: { type: "Matemática", text: "¿Qué número sigue? 2, 3, 5, 9, 17, …", answers: ["33", "treinta y tres"] },
       html: `<h3>Foto 12/36 · Baile de Ánimas</h3>
@@ -245,8 +245,8 @@ Guardé el libro de cuentas en la caja fuerte. Para no olvidar la combinación l
       timeline: [["23:35", "Julián está en el patio (foto con el reloj de la iglesia)"]]
     },
     {
-      code: "PR23", next: "TX47", seal: "NOCTURNO", title: "Programa del baile", kind: "Impreso", room: "Sala", spot: "Debajo de un peón del ajedrez o dentro de un libro de música",
-      hint: "Ocho pequeños soldados cuidan la primera fila. Uno de ellos guarda un papel.",
+      code: "PR23", next: "TX47", seal: "NOCTURNO", title: "Programa del baile", kind: "Impreso", room: "Sala", spot: "Dentro de un libro de terror",
+      hint: "Entre páginas que asustan a los vivos duerme el programa de mi última noche.",
       q: { type: "Lógica", text: "Si 5 gatos cazan 5 ratones en 5 minutos, ¿cuántos gatos hacen falta para cazar 100 ratones en 100 minutos?", answers: ["5", "cinco"] },
       html: `<h3>Programa · Baile de Ánimas 1957</h3>
 <p>20:30 Cena · 22:00 Baile · <b>23:00 – 00:00 Recital a la luz de las velas: Dra. Inés Calderón al piano</b></p>
@@ -254,8 +254,8 @@ Guardé el libro de cuentas en la caja fuerte. Para no olvidar la combinación l
       timeline: [["23:00", "La Dra. Calderón toca el piano frente a todos hasta medianoche"]]
     },
     {
-      code: "FR40", next: "EP12", seal: "CISTERNA", title: "Frasco envuelto en un pañuelo", kind: "Objeto", room: "Baño", spot: "En la tapa del tanque del inodoro (en bolsa plástica) o detrás de él",
-      hint: "El agua guarda secretos fríos. Levanta la tapa de lo que nadie mira.",
+      code: "FR40", next: "EP12", seal: "CISTERNA", title: "Frasco envuelto en un pañuelo", kind: "Objeto", room: "Baño", spot: "Dentro del rollo de papel de baño (en el tubo de cartón)",
+      hint: "Lo que todos usan y nadie mira gira en blanco. Desenróllalo y hallarás algo frío.",
       q: { type: "Libros", text: "¿Cómo se llama el médico amigo de Sherlock Holmes que narra sus aventuras?", answers: ["watson", "john watson", "doctor watson", "dr watson", "dr. watson", "john h watson"] },
       html: `<h3>Objeto encontrado en la cisterna del baño</h3>
 <p>Frasco vacío: <b>DIGITALINA 0,1 mg</b> · Farmacia del Puerto · Propiedad de la Dra. I. Calderón.</p>
@@ -281,8 +281,8 @@ Guardé el libro de cuentas en la caja fuerte. Para no olvidar la combinación l
       timeline: []
     },
     {
-      code: "VZ02", next: "PR23", seal: "MUELLE", title: "Nota de Teo", kind: "Nota manuscrita", room: "Patio", spot: "Debajo de una maceta o dentro de un farol / vela del patio",
-      hint: "Afuera, donde la noche pisa la tierra, levanta lo que sostiene una planta.",
+      code: "VZ02", next: "PR23", seal: "MUELLE", title: "Nota de Teo", kind: "Nota manuscrita", room: "Sala", spot: "Debajo de una maceta de la sala",
+      hint: "Bajo techo, donde la tierra vive en barro, levanta lo que sostiene una planta.",
       q: { type: "Libros", text: "¿Cómo se llama el caballo de Don Quijote?", answers: ["rocinante", "rocinante el caballo"] },
       html: `<h3>Nota doblada en el bolsillo de un delantal</h3>
 <p class="hand">C.: Ella sospecha de mí, no de ti. Me voy esta noche. Nadie debe saber lo nuestro ni lo de los cuadros. Mañana en el muelle, como acordamos. — T.</p>`,

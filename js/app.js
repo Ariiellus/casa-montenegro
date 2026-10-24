@@ -257,7 +257,7 @@ function viewCase(v) {
       <ol class="goals"><li><b>Quién</b> la mató</li><li><b>Cómo</b> lo hizo</li><li><b>Por qué</b></li><li>Bonus: el <b>cómplice</b> y el <b>origen del veneno</b></li></ol>
       <h2>Cómo se juega</h2>
       <ul class="rules">
-        <li>Busquen las tarjetas de evidencia escondidas en la sala, la cocina, el baño y el patio. Solo <b>4</b> escondites llevan el <b>sello de Elvira</b>; cada pista resuelta trae un <b>eco</b>: un acertijo que lleva a la siguiente.</li>
+        <li>Busquen las tarjetas de evidencia escondidas en la sala, la cocina, el baño, el cuarto y el patio. Solo <b>4</b> escondites llevan el <b>sello de Elvira</b>; cada pista resuelta trae un <b>eco</b>: un acertijo que lleva a la siguiente.</li>
         <li>Escaneen el QR con el celular, respondan la pregunta y lean la pista <b>en secreto</b>.</li>
         <li>Escriban aquí el <b>sello</b> que les da el celular para ganar puntos.</li>
         <li>Sin celular: escriban el código de la tarjeta aquí y respondan en pantalla (todos lo verán).</li>
@@ -622,7 +622,7 @@ function renderGuide() {
     <h2>2. Reglas para leer en voz alta</h2>
     <ul>
       <li>Dos equipos. El fantasma de Elvira narra; tú eres el inspector Ríos y árbitro.</li>
-      <li>Busquen tarjetas en sala, cocina, baño y patio. Escaneen el QR, respondan la pregunta y lean la pista en secreto. Escriban el <b>sello</b> en la pantalla para sumar puntos.</li>
+      <li>Busquen tarjetas en sala, cocina, baño, cuarto y patio. Escaneen el QR, respondan la pregunta y lean la pista en secreto. Escriban el <b>sello</b> en la pantalla para sumar puntos.</li>
       <li>Puntos: pista +${C.points.evidence}, acertijo-candado +${C.points.puzzle}, acertijo relámpago +${C.points.riddle}, visión ${C.points.vision}. Acusación: culpable +${C.points.culprit}, método +${C.points.method}, motivo +${C.points.motive}, cómplice +${C.points.accomplice}, veneno +${C.points.source}.</li>
       <li>No se vale romper, abrir cajones con llave ni mover muebles pesados.</li>
     </ul>
