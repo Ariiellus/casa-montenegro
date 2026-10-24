@@ -93,7 +93,9 @@ function modal(html, cls = "") {
   return { el: wrap.firstElementChild, close };
 }
 function docHtml(ev) {
-  return `<div class="doc ${ev.mirror ? "has-mirror" : ""}"><div class="doc-kind">${esc(ev.kind)}</div>${ev.html}</div>`;
+  const nx = ev.next && C.evidence.find(e => e.code === ev.next);
+  const eco = nx ? `<div class="eco"><b>El eco susurra</b> <span class="eco-room">(${esc(nx.room)})</span>: <i>${esc(hintFor(nx))}</i></div>` : "";
+  return `<div class="doc ${ev.mirror ? "has-mirror" : ""}"><div class="doc-kind">${esc(ev.kind)}</div>${ev.html}</div>${eco}`;
 }
 function qrSvg(text, cell = 4) {
   const q = qrcode(0, "M"); q.addData(text); q.make();
@@ -255,7 +257,7 @@ function viewCase(v) {
       <ol class="goals"><li><b>Quién</b> la mató</li><li><b>Cómo</b> lo hizo</li><li><b>Por qué</b></li><li>Bonus: el <b>cómplice</b> y el <b>origen del veneno</b></li></ol>
       <h2>Cómo se juega</h2>
       <ul class="rules">
-        <li>Busquen las tarjetas de evidencia escondidas en la sala, la cocina, el baño y el patio.</li>
+        <li>Busquen las tarjetas de evidencia escondidas en la sala, la cocina, el baño y el patio. Solo <b>4</b> escondites llevan el <b>sello de Elvira</b>; cada pista resuelta trae un <b>eco</b>: un acertijo que lleva a la siguiente.</li>
         <li>Escaneen el QR con el celular, respondan la pregunta y lean la pista <b>en secreto</b>.</li>
         <li>Escriban aquí el <b>sello</b> que les da el celular para ganar puntos.</li>
         <li>Sin celular: escriban el código de la tarjeta aquí y respondan en pantalla (todos lo verán).</li>
@@ -293,6 +295,7 @@ function viewEvidence(v) {
       <div class="claim-teams">${S.teams.map((t, i) => `<button type="submit" class="btn team-btn" data-team="${t.id}" style="--c:${t.color}">${esc(t.name)}</button>`).join("")}</div>
     </form>
     <div class="ev-count">${claimed.length} de ${C.evidence.length} pistas encontradas</div>
+    <div class="room-left">${[...new Set(C.evidence.map(e => e.room))].map(r => { const n = C.evidence.filter(e => e.room === r && !S.claims[e.code]).length; return `<span class="${n ? "" : "done"}">${esc(r)}: ${n ? `quedan ${n}` : "vacío"}</span>`; }).join("")}</div>
     <div class="board">
       ${autos.map(a => `<button class="ev-card public official" data-auto="${a.auto}"><div class="ev-kind">${esc(a.kind)}</div><div class="ev-title">${esc(a.title)}</div><div class="ev-team">Oficial</div></button>`).join("")}
       ${claimed.map(e => { const c = S.claims[e.code], t = team(c.team); return `
@@ -365,7 +368,7 @@ function askOnScreen(ev, teamId) {
     } else {
       SFX.wrong(); m.el.classList.remove("shake"); void m.el.offsetWidth; m.el.classList.add("shake");
       S.cooldown[ev.code] = Date.now() + 15000; save();
-      let n = 15; const msg = $("#qa-msg", m.el); input.disabled = true;
+      let n = 30; const msg = $("#qa-msg", m.el); input.disabled = true;
       const iv = setInterval(() => { msg.textContent = `Incorrecto. El fantasma calla… ${n--}s`; if (n < 0) { clearInterval(iv); msg.textContent = ""; input.disabled = false; input.select(); } }, 1000);
     }
   };
@@ -554,7 +557,7 @@ function renderPhone(code) {
     } else {
       try { SFX.wrong(); } catch (e2) {}
       if (navigator.vibrate) navigator.vibrate(300);
-      let n = 10; inp.disabled = true; const msg = $("#pq-msg");
+      let n = 20; inp.disabled = true; const msg = $("#pq-msg");
       const iv = setInterval(() => { msg.textContent = `Incorrecto. Espera ${n--}s para intentar otra vez.`; if (n < 0) { clearInterval(iv); msg.textContent = ""; inp.disabled = false; inp.select(); } }, 1000);
     }
   };
@@ -584,6 +587,11 @@ function renderPrint() {
       <table class="dt"><tr><th>Sospechoso</th><th>Motivo</th><th>Medios</th><th>Oportunidad / coartada</th></tr>
       ${C.suspects.map(s => `<tr><td>${esc(s.name)}</td><td></td><td></td><td></td></tr>`).join("")}</table>
       <p>Notas:</p><div class="lines"></div>
+    </div>
+    <div class="pcard sheet">
+      <h2>Sellos de Elvira (pegar por fuera de los 4 escondites de inicio)</h2>
+      <div class="seals">${C.evidence.filter(e => e.start).map(e => `<div class="wax"><span>EM</span><small>${e.code}</small></div>`).join("")}</div>
+      <p class="small">El código pequeño es solo para ti: indica en qué escondite va cada sello. Recórtalo si quieres.</p>
     </div>
     <div class="pcard sheet">
       <h2>Nota escrita al revés (prop físico para el baño)</h2>
@@ -630,10 +638,10 @@ function renderGuide() {
     <p>Puedes interpretar a los sospechosos si te preguntan: usa sus declaraciones. Solo Camila (sobre dónde estuvo) y Teo (sobre los cuadros) mienten.</p>
 
     <h2>4. Escondites, preguntas y respuestas</h2>
-    <table class="gt"><tr><th>Código</th><th>Pista</th><th>Lugar</th><th>Escondite (editable)</th><th>Respuesta</th><th>Sello</th></tr>
+    <table class="gt"><tr><th>Código</th><th>Pista</th><th>Lugar</th><th>Escondite (editable)</th><th>Respuesta</th><th>Sello</th><th>Cadena</th></tr>
     ${C.evidence.map(e => `<tr><td><b>${e.code}</b></td><td>${esc(e.title)}${e.puzzle ? " <i>(acertijo-candado)</i>" : ""}</td><td>${esc(e.room)}</td>
       <td><input class="spot" data-spot="${e.code}" value="${esc(sp[e.code] || e.spot)}"><input class="spot hint" data-spot="${e.code}:hint" value="${esc(sp[e.code + ":hint"] || e.hint)}" title="Texto de la visión"></td>
-      <td>${esc(e.q.answers[0])}</td><td>${esc(e.seal)}</td></tr>`).join("")}</table>
+      <td>${esc(e.q.answers[0])}</td><td>${esc(e.seal)}</td><td>${e.start ? "<b>INICIO · pegar sello</b><br>" : ""}${e.next ? `→ ${e.next}` : "fin"}</td></tr>`).join("")}</table>
     <p class="small">La segunda línea de cada escondite es la «visión» que lee el fantasma cuando un equipo pide ayuda: actualízala si cambias el escondite.</p>
 
     <h2>5. Solución</h2>

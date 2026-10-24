@@ -5,6 +5,7 @@ window.VOZ = {
  "La muerte me robó el recuerdo de esa noche. No sé quién fue. Por eso no puedo irme.": "audio/voz/e8f96c1f0b.mp3",
  "Mis secretos siguen escondidos entre estas paredes: entre los libros, bajo las velas, detrás de los cuadros, entre las plantas y hasta en el tablero de ajedrez.": "audio/voz/5f4821634c.mp3",
  "Cada pista guarda una pregunta. Respóndanla y les mostraré lo que esconde.": "audio/voz/f43f3cfa0c.mp3",
+ "Solo cuatro de mis escondites llevan mi sello de cera. Los demás… se los susurrará el eco de cada secreto que descubran.": "audio/voz/efe7bd0f24.mp3",
  "Tienen hasta que el reloj llegue a cero. Si no descubren quién me mató, cómo y por qué… quedaré atrapada otro siglo. Y quizás alguno de ustedes se quede conmigo.": "audio/voz/de8f1c4f89.mp3",
  "Recuerdo algo… a las once y veinticinco se fue la luz.": "audio/voz/15688ffd0c.mp3",
  "Todos encendieron velas. Alguien seguía tocando el piano en la oscuridad. Y oí pasos en la escalera de servicio.": "audio/voz/8491815ef0.mp3",

@@ -10,7 +10,7 @@ window.CASE = {
     { id: "b", name: "Equipo Cuervo", color: "#8fb3ff" }
   ],
 
-  points: { evidence: 2, puzzle: 3, riddle: 1, vision: -1, culprit: 5, method: 3, motive: 3, accomplice: 2, source: 2 },
+  points: { evidence: 2, puzzle: 3, riddle: 1, vision: -2, culprit: 5, method: 3, motive: 3, accomplice: 2, source: 2 },
 
   phases: [
     {
@@ -21,6 +21,7 @@ window.CASE = {
         "La muerte me robó el recuerdo de esa noche. No sé quién fue. Por eso no puedo irme.",
         "Mis secretos siguen escondidos entre estas paredes: entre los libros, bajo las velas, detrás de los cuadros, entre las plantas y hasta en el tablero de ajedrez.",
         "Cada pista guarda una pregunta. Respóndanla y les mostraré lo que esconde.",
+        "Solo cuatro de mis escondites llevan mi sello de cera. Los demás… se los susurrará el eco de cada secreto que descubran.",
         "Tienen hasta que el reloj llegue a cero. Si no descubren quién me mató, cómo y por qué… quedaré atrapada otro siglo. Y quizás alguno de ustedes se quede conmigo."
       ],
       evidence: ["forense"]
@@ -169,14 +170,14 @@ window.CASE = {
     {
       code: "TX47", seal: "FARO", title: "Boleto de taxi", kind: "Recibo", room: "Sala", spot: "Dentro de un libro del librero (entre las páginas)",
       hint: "Viajó lejos sin moverse: duerme entre las páginas de un libro de la sala.",
-      q: { type: "Libros", text: "¿Quién escribió «Cien años de soledad»?", answers: ["gabriel garcia marquez", "garcia marquez", "gabo", "marquez"] },
+      q: { type: "Libros", text: "¿En qué pueblo ficticio transcurre «Cien años de soledad»?", answers: ["macondo"] },
       html: `<h3>Taxis El Faro · Servicio nº 0447</h3>
 <p><b>Recogida:</b> Casa Montenegro · <b>22:47 h</b></p><p><b>Destino:</b> Hotel del Puerto · llegada 23:05 h</p>
 <p><b>Pasajero:</b> Sr. T. Vargas</p><p class="hand">Pagó en efectivo, con prisa. No volvió a salir del hotel en toda la noche. — El conductor</p>`,
       timeline: [["22:47", "Teo Vargas se va en taxi al Hotel del Puerto"]]
     },
     {
-      code: "GR20", seal: "ABRIGO", title: "Lista del guardarropa", kind: "Nota manuscrita", room: "Sala", spot: "Debajo de una vela o candelabro",
+      code: "GR20", start: true, next: "AJ18", seal: "ABRIGO", title: "Lista del guardarropa", kind: "Nota manuscrita", room: "Sala", spot: "Debajo de una vela o candelabro",
       hint: "Donde la llama llora cera, algo espera debajo.",
       q: { type: "Acertijo", text: "Cuanto más me quitas, más grande soy. ¿Qué soy?", answers: ["hoyo", "un hoyo", "agujero", "un agujero", "pozo", "un pozo", "hueco", "un hueco"] },
       html: `<h3>Guardarropa · Baile de Ánimas</h3>
@@ -188,9 +189,9 @@ window.CASE = {
       timeline: [["20:10", "Camila guarda el maletín de la doctora en el guardarropa (solo ella tiene la llave)"]]
     },
     {
-      code: "TS57", seal: "TINTA", title: "Testamento y pagaré", kind: "Documento legal", room: "Sala", spot: "Detrás de un cuadro",
+      code: "TS57", start: true, next: "RB08", seal: "TINTA", title: "Testamento y pagaré", kind: "Documento legal", room: "Sala", spot: "Detrás de un cuadro",
       hint: "Alguien me observa desde la pared. Mira detrás de su mirada.",
-      q: { type: "Cultura general", text: "¿En qué año llegó el ser humano a la Luna por primera vez?", answers: ["1969"] },
+      q: { type: "Lógica", text: "Escrito en español, ¿qué número del 1 al 10 tiene tantas letras como su propio valor?", answers: ["5", "cinco", "el cinco"] },
       html: `<h3>Testamento de Elvira Montenegro</h3>
 <p>· Julián Montenegro (sobrino): <b>70 %</b> de los bienes y la casa.<br>
 · Camila Reyes: 10 % y derecho a vivir en la casa.<br>
@@ -200,7 +201,7 @@ window.CASE = {
       timeline: []
     },
     {
-      code: "DS31", seal: "SARTEN", title: "Carta de despido", kind: "Carta", room: "Cocina", spot: "Dentro de una lata o frasco de la alacena",
+      code: "DS31", next: "VR25", seal: "SARTEN", title: "Carta de despido", kind: "Carta", room: "Cocina", spot: "Dentro de una lata o frasco de la alacena",
       hint: "Entre azúcar, sal y harina, una carta amarga se esconde en la cocina.",
       q: { type: "Matemática", text: "Un bate y una pelota cuestan 1,10 en total. El bate cuesta 1,00 más que la pelota. ¿Cuánto cuesta la pelota?", answers: ["0.05", "0,05", ".05", ",05", "5 centavos", "cinco centavos", "5"] },
       html: `<h3>Para Bruno Salazar</h3>
@@ -208,7 +209,7 @@ window.CASE = {
       timeline: []
     },
     {
-      code: "RB08", seal: "LAZO", title: "Retrato de Bombón", kind: "Fotografía", room: "Sala", spot: "Detrás de otro cuadro o portarretratos",
+      code: "RB08", next: "DI06", seal: "LAZO", title: "Retrato de Bombón", kind: "Fotografía", room: "Sala", spot: "Detrás de otro cuadro o portarretratos",
       hint: "Un fiel guardián posa en un marco. Dale la vuelta a un recuerdo.",
       q: { type: "Libros", text: "En la novela de Bram Stoker, ¿de qué región viene el conde Drácula?", answers: ["transilvania", "transylvania", "rumania", "rumanía"] },
       html: `<h3>Fotografía, 1955</h3>
@@ -217,7 +218,7 @@ window.CASE = {
       timeline: []
     },
     {
-      code: "AJ18", seal: "ALFIL", title: "Página del diario (22:00)", kind: "Acertijo · Ajedrez", room: "Sala", spot: "Debajo del rey o la dama del tablero de ajedrez", puzzle: true,
+      code: "AJ18", next: "CF71", seal: "ALFIL", title: "Página del diario (22:00)", kind: "Acertijo · Ajedrez", room: "Sala", spot: "Debajo del rey o la dama del tablero de ajedrez", puzzle: true,
       hint: "El rey nunca se mueve más de un paso… pero sabe lo que hay debajo de sus pies.",
       q: { type: "Lógica", text: "El cofre del ajedrez se abre con un número.\n♜ + ♜ + ♜ = 15\n♜ + ♞ + ♞ = 11\n♞ + ♝ × ♝ = 12\n♛ − ♜ = 4\n¿Cuánto vale ♛ + ♞ × ♝ ?", answers: ["18"] },
       html: `<h3>Diario de Elvira · 24 de octubre, 22:00</h3>
@@ -226,7 +227,7 @@ Guardé el libro de cuentas en la caja fuerte. Para no olvidar la combinación l
       timeline: [["22:00", "Elvira y Teo discuten por los cuadros falsos"]]
     },
     {
-      code: "NB23", seal: "MIEL", title: "Nota de Bruno y boleto de tranvía", kind: "Nota manuscrita", room: "Cocina", spot: "Dentro de la caja de té, debajo de la tetera o entre las tazas",
+      code: "NB23", start: true, next: "DS31", seal: "MIEL", title: "Nota de Bruno y boleto de tranvía", kind: "Nota manuscrita", room: "Cocina", spot: "Dentro de la caja de té, debajo de la tetera o entre las tazas",
       hint: "Huele a manzanilla. Busca donde se guarda el té.",
       q: { type: "Acertijo", text: "Encendí 7 velas. El viento apagó 3. Al final de la noche, ¿cuántas velas me quedaron?", answers: ["3", "tres"] },
       html: `<h3>Nota sobre la mesa de la cocina</h3>
@@ -235,16 +236,16 @@ Guardé el libro de cuentas en la caja fuerte. Para no olvidar la combinación l
       timeline: [["23:00", "Bruno deja la bandeja del té lista: Camila se la subirá a Elvira"], ["23:12", "Bruno toma el último tranvía"]]
     },
     {
-      code: "FP35", seal: "HUMO", title: "Fotografía del patio", kind: "Fotografía", room: "Patio", spot: "Entre las plantas o macetas del patio",
+      code: "FP35", start: true, next: "VZ02", seal: "HUMO", title: "Fotografía del patio", kind: "Fotografía", room: "Patio", spot: "Entre las plantas o macetas del patio",
       hint: "Donde las hojas respiran de noche, una imagen espera entre raíces.",
-      q: { type: "Cultura general", text: "¿Cuál es el hueso más largo del cuerpo humano?", answers: ["femur", "el femur"] },
+      q: { type: "Matemática", text: "¿Qué número sigue? 2, 3, 5, 9, 17, …", answers: ["33", "treinta y tres"] },
       html: `<h3>Foto 12/36 · Baile de Ánimas</h3>
 <p>El Sr. Julián Montenegro fuma junto a la fuente del patio. Al fondo, el reloj de la iglesia marca las <b>23:35</b>.</p>
 <p class="hand">Estuve en el patio de 23:15 a 23:50 y el Sr. Julián no se movió de la fuente. Nadie entró ni salió por el portón. — A. Duarte, fotógrafo</p>`,
       timeline: [["23:35", "Julián está en el patio (foto con el reloj de la iglesia)"]]
     },
     {
-      code: "PR23", seal: "NOCTURNO", title: "Programa del baile", kind: "Impreso", room: "Sala", spot: "Debajo de un peón del ajedrez o dentro de un libro de música",
+      code: "PR23", next: "TX47", seal: "NOCTURNO", title: "Programa del baile", kind: "Impreso", room: "Sala", spot: "Debajo de un peón del ajedrez o dentro de un libro de música",
       hint: "Ocho pequeños soldados cuidan la primera fila. Uno de ellos guarda un papel.",
       q: { type: "Lógica", text: "Si 5 gatos cazan 5 ratones en 5 minutos, ¿cuántos gatos hacen falta para cazar 100 ratones en 100 minutos?", answers: ["5", "cinco"] },
       html: `<h3>Programa · Baile de Ánimas 1957</h3>
@@ -253,18 +254,18 @@ Guardé el libro de cuentas en la caja fuerte. Para no olvidar la combinación l
       timeline: [["23:00", "La Dra. Calderón toca el piano frente a todos hasta medianoche"]]
     },
     {
-      code: "FR40", seal: "CISTERNA", title: "Frasco envuelto en un pañuelo", kind: "Objeto", room: "Baño", spot: "En la tapa del tanque del inodoro (en bolsa plástica) o detrás de él",
+      code: "FR40", next: "EP12", seal: "CISTERNA", title: "Frasco envuelto en un pañuelo", kind: "Objeto", room: "Baño", spot: "En la tapa del tanque del inodoro (en bolsa plástica) o detrás de él",
       hint: "El agua guarda secretos fríos. Levanta la tapa de lo que nadie mira.",
-      q: { type: "Libros", text: "¿Cómo se llama el detective belga de bigote impecable creado por Agatha Christie?", answers: ["hercule poirot", "poirot", "hercules poirot"] },
+      q: { type: "Libros", text: "¿Cómo se llama el médico amigo de Sherlock Holmes que narra sus aventuras?", answers: ["watson", "john watson", "doctor watson", "dr watson", "dr. watson", "john h watson"] },
       html: `<h3>Objeto encontrado en la cisterna del baño</h3>
 <p>Frasco vacío: <b>DIGITALINA 0,1 mg</b> · Farmacia del Puerto · Propiedad de la Dra. I. Calderón.</p>
 <p>Envuelto en un pañuelo de seda bordado con las iniciales <b>«T.V.»</b></p>`,
       timeline: [["23:45", "Alguien esconde el frasco de digitalina en la cisterna del baño"]]
     },
     {
-      code: "VR25", seal: "CERA", title: "Inventario de velas", kind: "Nota manuscrita", room: "Cocina", spot: "En el cajón o caja donde se guardan las velas / bajo una vela de la cocina",
+      code: "VR25", next: "FR40", seal: "CERA", title: "Inventario de velas", kind: "Nota manuscrita", room: "Cocina", spot: "En el cajón o caja donde se guardan las velas / bajo una vela de la cocina",
       hint: "Rojas como la sangre, blancas como el miedo. Cuéntalas donde se guardan.",
-      q: { type: "Cultura general", text: "¿Qué elemento químico tiene el símbolo «Au»?", answers: ["oro", "el oro"] },
+      q: { type: "Cultura general", text: "¿Qué elemento químico tiene el símbolo «W»?", answers: ["wolframio", "tungsteno", "el wolframio", "el tungsteno", "wolfram"] },
       html: `<h3>Inventario de la cocina (letra de Bruno)</h3>
 <p class="hand">Velas blancas: 40 — para toda la casa.<br>Velas <b>rojas</b> perfumadas: 6 — <b>solo para el cuarto de la Srta. Camila</b> (las pidió ella).</p>
 <hr><p><b>Nota del inspector:</b> se hallaron gotas de cera <b>roja</b> en la escalera de servicio, frente a la puerta del estudio y sobre la tapa de la cisterna del baño.</p>`,
@@ -280,9 +281,9 @@ Guardé el libro de cuentas en la caja fuerte. Para no olvidar la combinación l
       timeline: []
     },
     {
-      code: "VZ02", seal: "MUELLE", title: "Nota de Teo", kind: "Nota manuscrita", room: "Patio", spot: "Debajo de una maceta o dentro de un farol / vela del patio",
+      code: "VZ02", next: "PR23", seal: "MUELLE", title: "Nota de Teo", kind: "Nota manuscrita", room: "Patio", spot: "Debajo de una maceta o dentro de un farol / vela del patio",
       hint: "Afuera, donde la noche pisa la tierra, levanta lo que sostiene una planta.",
-      q: { type: "Libros", text: "Completa la frase del Quijote: «En un lugar de la Mancha, de cuyo nombre no quiero…»", answers: ["acordarme"] },
+      q: { type: "Libros", text: "¿Cómo se llama el caballo de Don Quijote?", answers: ["rocinante", "rocinante el caballo"] },
       html: `<h3>Nota doblada en el bolsillo de un delantal</h3>
 <p class="hand">C.: Ella sospecha de mí, no de ti. Me voy esta noche. Nadie debe saber lo nuestro ni lo de los cuadros. Mañana en el muelle, como acordamos. — T.</p>`,
       timeline: [["22:45", "Teo deja una nota secreta para «C.» antes de irse"]]
