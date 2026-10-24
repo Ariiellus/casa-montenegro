@@ -582,18 +582,18 @@ function renderPrint() {
         </div>
         <div class="pc-foot">Escanea el QR y responde · o escribe <b>${e.code}</b> en la pantalla principal</div>
       </div>`).join("")}</div>
-    <div class="pcard sheet">
-      <h2>Hoja del detective</h2>
+    ${S.teams.map(t => `<div class="pcard sheet">
+      <h2>Hoja del detective · ${esc(t.name)}</h2>
       <table class="dt"><tr><th>Sospechoso</th><th>Motivo</th><th>Medios</th><th>Oportunidad / coartada</th></tr>
       ${C.suspects.map(s => `<tr><td>${esc(s.name)}</td><td></td><td></td><td></td></tr>`).join("")}</table>
       <p>Notas:</p><div class="lines"></div>
-    </div>
+    </div>`).join("")}
     <div class="pcard sheet">
       <h2>Sellos de Elvira (pegar por fuera de los 4 escondites de inicio)</h2>
       <div class="seals">${C.evidence.filter(e => e.start).map(e => `<div class="wax"><span>EM</span></div>`).join("")}</div>
       <p class="small">Pégalos en los 4 escondites marcados «SELLO» en la guía (#/guia o el checklist del PDF).</p>
     </div>
-    <div class="pcard sheet">
+    <div class="pcard sheet landscape">
       <h2>Nota escrita al revés (prop físico para el baño)</h2>
       <p class="hand mirror big-hand">T.: Ella encontró el libro de cuentas. Si mañana habla con el inspector, caemos los dos. Yo me encargo esta noche. No vuelvas. — C.</p>
     </div>`;
