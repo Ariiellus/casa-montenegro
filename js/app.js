@@ -594,7 +594,7 @@ function renderPrint() {
       <p class="small">Pégalos en los 4 escondites marcados «SELLO» en la guía (#/guia o el checklist del PDF).</p>
     </div>
     <div class="pcard sheet landscape">
-      <h2>Nota escrita al revés (prop físico para el baño)</h2>
+      <h2 class="no-print">Nota escrita al revés (prop físico para el baño)</h2>
       <p class="hand mirror big-hand">T.: Ella encontró el libro de cuentas. Si mañana habla con el inspector, caemos los dos. Yo me encargo esta noche. No vuelvas. — C.</p>
     </div>`;
   $("#base").onchange = e => { localStorage.setItem("montenegro-base", e.target.value.trim()); renderPrint(); };
