@@ -615,7 +615,7 @@ function renderGuide() {
       <li>Abre esta web en la laptop/TV conectada a parlantes. Pon pantalla completa.</li>
       <li>Imprime las tarjetas desde <a href="#/imprimir">Imprimir pistas</a> y recórtalas. Si la web está publicada, los QR funcionan desde cualquier celular.</li>
       <li>Esconde cada tarjeta según la tabla de abajo (puedes cambiar el escondite: lo que escribas aquí se guarda y lo usan las «visiones»).</li>
-      <li><b>Props recomendados:</b> tablero de ajedrez (tarjetas bajo el rey y un peón), velas (una roja: gotea cera roja sobre la tapa del inodoro y cerca de la tarjeta del baño), un frasquito vacío con etiqueta «DIGITALINA» envuelto en un pañuelo con «T.V.» escrito, un espejo en el baño, una cajita (opcional con candado de 4 dígitos 7130) para la tarjeta de la caja fuerte, plantas y cuadros.</li>
+      <li><b>Props recomendados:</b> tablero de ajedrez (tarjeta bajo el rey), velas (una roja: gotea cera roja cerca de la tarjeta del baño), un frasquito vacío con etiqueta «DIGITALINA» envuelto en un pañuelo con «T.V.» escrito, un espejo en el baño, una cajita (opcional con candado de 4 dígitos 7130) para la tarjeta de la caja fuerte, plantas y cuadros.</li>
       <li>Atmósfera: luces bajas, velas LED, telarañas, música ambiente (la app ya trae viento y latidos).</li>
     </ul>
 
