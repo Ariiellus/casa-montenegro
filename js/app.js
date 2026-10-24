@@ -590,8 +590,8 @@ function renderPrint() {
     </div>
     <div class="pcard sheet">
       <h2>Sellos de Elvira (pegar por fuera de los 4 escondites de inicio)</h2>
-      <div class="seals">${C.evidence.filter(e => e.start).map(e => `<div class="wax"><span>EM</span><small>${e.code}</small></div>`).join("")}</div>
-      <p class="small">El código pequeño es solo para ti: indica en qué escondite va cada sello. Recórtalo si quieres.</p>
+      <div class="seals">${C.evidence.filter(e => e.start).map(e => `<div class="wax"><span>EM</span></div>`).join("")}</div>
+      <p class="small">Pégalos en los 4 escondites marcados «SELLO» en la guía (#/guia o el checklist del PDF).</p>
     </div>
     <div class="pcard sheet">
       <h2>Nota escrita al revés (prop físico para el baño)</h2>
