@@ -101,7 +101,7 @@ function qrSvg(text, cell = 4) {
   const q = qrcode(0, "M"); q.addData(text); q.make();
   return q.createSvgTag({ cellSize: cell, margin: 2, scalable: true });
 }
-const baseUrl = () => (localStorage.getItem("montenegro-base") || (location.origin + location.pathname)).replace(/#.*$/, "");
+const baseUrl = () => (localStorage.getItem("montenegro-base") || C.publicUrl || (location.origin + location.pathname)).replace(/#.*$/, "");
 const evidenceUrl = code => `${baseUrl()}#/e/${code}`;
 
 // ---------- narración ----------

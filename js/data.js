@@ -4,6 +4,7 @@ window.CASE = {
   subtitle: "Un misterio para vivos, contado por una muerta",
   year: 1957,
   victim: "Doña Elvira Montenegro",
+  publicUrl: "https://casa-montenegro-one.vercel.app/",
 
   teams: [
     { id: "a", name: "Equipo Vela", color: "#e8b04a" },
@@ -168,8 +169,8 @@ window.CASE = {
   // Pistas escondidas. code = lo que está impreso en la tarjeta. seal = palabra que da el celular para reclamar puntos.
   evidence: [
     {
-      code: "TX47", seal: "FARO", title: "Boleto de taxi", kind: "Recibo", room: "Sala", spot: "Dentro de un libro del librero (entre las páginas)",
-      hint: "Viajó lejos sin moverse: duerme entre las páginas de un libro de la sala.",
+      code: "TX47", seal: "FARO", title: "Boleto de taxi", kind: "Recibo", room: "Sala", spot: "Dentro de un libro de viajes, atlas o mapas del librero",
+      hint: "Viajó lejos sin moverse: duerme entre mapas y caminos, en un libro de viajes de la sala.",
       q: { type: "Libros", text: "¿En qué pueblo ficticio transcurre «Cien años de soledad»?", answers: ["macondo"] },
       html: `<h3>Taxis El Faro · Servicio nº 0447</h3>
 <p><b>Recogida:</b> Casa Montenegro · <b>22:47 h</b></p><p><b>Destino:</b> Hotel del Puerto · llegada 23:05 h</p>
@@ -236,7 +237,7 @@ Guardé el libro de cuentas en la caja fuerte. Para no olvidar la combinación l
       timeline: [["23:00", "Bruno deja la bandeja del té lista: Camila se la subirá a Elvira"], ["23:12", "Bruno toma el último tranvía"]]
     },
     {
-      code: "FP35", start: true, next: "VZ02", seal: "HUMO", title: "Fotografía del patio", kind: "Fotografía", room: "Sala", spot: "Entre las hojas o en la tierra de una planta de la sala",
+      code: "FP35", start: true, next: "VZ02", seal: "HUMO", title: "Fotografía del patio", kind: "Fotografía", room: "Sala", spot: "Entre las hojas o en la tierra de una planta de la sala (otra planta que la de P-13)",
       hint: "Donde las hojas respiran de noche, una imagen espera entre raíces.",
       q: { type: "Matemática", text: "¿Qué número sigue? 2, 3, 5, 9, 17, …", answers: ["33", "treinta y tres"] },
       html: `<h3>Foto 12/36 · Baile de Ánimas</h3>
@@ -281,7 +282,7 @@ Guardé el libro de cuentas en la caja fuerte. Para no olvidar la combinación l
       timeline: []
     },
     {
-      code: "VZ02", next: "PR23", seal: "MUELLE", title: "Nota de Teo", kind: "Nota manuscrita", room: "Sala", spot: "Debajo de una maceta de la sala",
+      code: "VZ02", next: "PR23", seal: "MUELLE", title: "Nota de Teo", kind: "Nota manuscrita", room: "Sala", spot: "Debajo de la maceta de otra planta de la sala (no la de P-08)",
       hint: "Bajo techo, donde la tierra vive en barro, levanta lo que sostiene una planta.",
       q: { type: "Libros", text: "¿Cómo se llama el caballo de Don Quijote?", answers: ["rocinante", "rocinante el caballo"] },
       html: `<h3>Nota doblada en el bolsillo de un delantal</h3>

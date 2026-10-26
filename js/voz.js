@@ -39,7 +39,7 @@ window.VOZ = {
  "QUIZÁS": "audio/voz/a50199588e.mp3",
  "NO LO SÉ": "audio/voz/c09e9377f9.mp3",
  "PREGUNTA OTRA COSA": "audio/voz/9c897349b4.mp3",
- "Viajó lejos sin moverse: duerme entre las páginas de un libro de la sala.": "audio/voz/4b9a7a2c15.mp3",
+ "Viajó lejos sin moverse: duerme entre mapas y caminos, en un libro de viajes de la sala.": "audio/voz/44e5dc73a9.mp3",
  "Donde la llama llora cera, algo espera debajo.": "audio/voz/a877021812.mp3",
  "Alguien me observa desde la pared. Mira detrás de su mirada.": "audio/voz/e8e670dc27.mp3",
  "Entre azúcar, sal y harina, una carta amarga se esconde en la cocina.": "audio/voz/f1315a88fe.mp3",
