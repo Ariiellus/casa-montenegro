@@ -34,6 +34,16 @@ function elapsed() {
   return Math.max(0, (now - S.startAt - S.pausedTotal) / 1000);
 }
 const remaining = () => Math.max(0, S.duration - elapsed());
+const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const isoToday = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+let remoteDate = null;
+const storyDay = () => remoteDate || S.dateOverride || S.playDate || isoToday();
+const dayShift = off => { const [, m, d] = storyDay().split("-").map(Number); return new Date(Date.UTC(C.year, m - 1, d + off)); };
+const fillDates = s => String(s).replace(/\{([dny]):([+-]?\d+)\}/g, (_, k, o) => {
+  const x = dayShift(+o);
+  return k === "d" ? `${x.getUTCDate()} de ${MESES[x.getUTCMonth()]}` : k === "n" ? `${x.getUTCDate()}/${x.getUTCMonth() + 1}` : String(x.getUTCFullYear());
+});
+const story = s => fillDates(s).replace(/\|/g, "");
 const fmt = s => { s = Math.ceil(s); const m = Math.floor(s / 60), r = s % 60; return `${String(m).padStart(2, "0")}:${String(r).padStart(2, "0")}`; };
 
 // ---------- voz ----------
@@ -51,20 +61,29 @@ function pickVoice() {
 }
 if ("speechSynthesis" in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
 let clip = null;
-const recorded = text => !S.voiceName && window.VOZ && window.VOZ[text];
+const recorded = text => {
+  if (S.voiceName || !window.VOZ) return null;
+  const srcs = fillDates(text).split("|").map(p => window.VOZ[p.trim()]);
+  return srcs.every(Boolean) ? srcs : null;
+};
 function speak(text, onend) {
   hush();
   if (!S.tts) { onend && setTimeout(onend, 0); return false; }
   const src = recorded(text);
   if (src) {
-    const a = clip = new Audio(src);
-    let ended = false; const end = () => { if (ended || clip !== a) return; ended = true; onend && onend(); };
-    a.onended = end; a.onerror = end;
-    a.play().catch(end);
+    let i = 0, ended = false;
+    const play = () => {
+      if (i >= src.length) { if (!ended) { ended = true; onend && onend(); } return; }
+      const a = clip = new Audio(src[i++]);
+      const nextClip = () => { if (clip === a) play(); };
+      a.onended = nextClip; a.onerror = nextClip;
+      a.play().catch(nextClip);
+    };
+    play();
     return true;
   }
   if (!("speechSynthesis" in window)) { onend && setTimeout(onend, 0); return false; }
-  const u = new SpeechSynthesisUtterance(text);
+  const u = new SpeechSynthesisUtterance(story(text));
   if (voice) u.voice = voice;
   u.lang = voice ? voice.lang : "es-MX"; u.rate = 0.88; u.pitch = 1.05;
   u.onend = () => onend && onend();
@@ -94,8 +113,10 @@ function modal(html, cls = "") {
 }
 function docHtml(ev) {
   const nx = ev.next && C.evidence.find(e => e.code === ev.next);
-  const eco = nx ? `<div class="eco"><b>El eco susurra</b> <span class="eco-room">(${esc(nx.room)})</span>: <i>${esc(hintFor(nx))}</i></div>` : "";
-  return `<div class="doc ${ev.mirror ? "has-mirror" : ""}"><div class="doc-kind">${esc(ev.kind)}</div>${ev.html}</div>${eco}`;
+  const eco = nx ? `<div class="eco"><div class="part-label">Siguiente escondite</div>
+    <div class="eco-room"><b>${esc(nx.room)}</b></div><i>«${esc(hintFor(nx))}»</i></div>` : "";
+  return `<div class="part-label crime">Pista del crimen <small>Sirve para resolver el caso</small></div>
+    <div class="doc ${ev.mirror ? "has-mirror" : ""}"><div class="doc-kind">${esc(ev.kind)}</div>${fillDates(ev.html)}</div>${eco}`;
 }
 function qrSvg(text, cell = 4) {
   const q = qrcode(0, "M"); q.addData(text); q.make();
@@ -119,7 +140,7 @@ function narrate(lines, title, after) {
     i++;
     if (i >= lines.length) return finish();
     box.querySelectorAll("p").forEach(p => p.classList.add("old"));
-    const p = document.createElement("p"); p.textContent = lines[i]; box.appendChild(p);
+    const p = document.createElement("p"); p.textContent = story(lines[i]); box.appendChild(p);
     requestAnimationFrame(() => p.classList.add("in"));
     const idx = i;
     speak(lines[i], () => setTimeout(() => { if (i === idx && !done) next(); }, 900));
@@ -158,6 +179,7 @@ function finishGame() {
 // ---------- reloj principal ----------
 let lastSec = -1, heartState = 0;
 function tickLoop() {
+  syncTick();
   if (S.started && !S.finished) {
     const rem = remaining(), el = elapsed() / S.duration;
     const t = $("#timer");
@@ -185,10 +207,17 @@ function tickLoop() {
 // ---------- vistas: principal ----------
 const TABS = [["caso", "El caso"], ["sospechosos", "Sospechosos"], ["evidencias", "Evidencias"], ["linea", "Línea de tiempo"], ["fantasma", "El fantasma"], ["acusacion", "Acusación"]];
 
+let lastRoute = null;
 function render() {
   const route = location.hash.replace(/^#\/?/, "");
+  if (route !== lastRoute) {
+    if (lastRoute !== null) { window.scrollTo(0, 0); if (/^(e|j)\//.test(route) || route === "yo") $("#overlay-root").innerHTML = ""; }
+    lastRoute = route;
+  }
   document.body.className = "";
   if (route.startsWith("e/")) return renderPhone(route.slice(2));
+  if (route.startsWith("j/")) return renderJoin(route.slice(2));
+  if (route === "yo") return renderMe();
   if (route === "imprimir") return renderPrint();
   if (route === "guia") return renderGuide();
   if (!S.started) return renderStart();
@@ -197,6 +226,7 @@ function render() {
 
 function renderStart() {
   document.body.className = "start";
+  ensureSession();
   $("#app").innerHTML = `
   <div class="start-screen">
     <div class="candle"></div>
@@ -209,6 +239,7 @@ function renderStart() {
         <select id="dur">${[30, 45, 60].map(m => `<option value="${m}" ${S.duration === m * 60 ? "selected" : ""}>${m} minutos</option>`).join("")}</select>
       </label>
     </div>
+    ${joinBox()}
     <button class="btn big" id="begin">Abrir la casa</button>
     <div class="start-links"><a href="#/guia">Guía del presentador</a> · <a href="#/imprimir">Imprimir pistas</a></div>
   </div>`;
@@ -217,7 +248,7 @@ function renderStart() {
     S.duration = +$("#dur").value * 60;
     SFX.ensure(); if (S.music) SFX.startAmbient();
     try { document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); } catch (e) {}
-    S.started = true; S.paused = true; S.startAt = Date.now(); S.pausedAt = S.startAt; S.phase = 0; save();
+    S.started = true; S.playDate = isoToday(); S.paused = true; S.startAt = Date.now(); S.pausedAt = S.startAt; S.phase = 0; save();
     renderMain();
     narrate(C.phases[0].narration, "Prólogo", () => {
       S.paused = false; S.pausedTotal += Date.now() - S.pausedAt; save();
@@ -232,6 +263,7 @@ function header() {
     <div class="brand"><div class="b-title">${esc(C.title)}</div><div class="b-phase">${S.finished ? "Medianoche · Acusación" : esc(ph.name)}</div></div>
     <div class="clock"><div id="timer" class="timer">${fmt(remaining())}</div><div class="timebar"><div id="timebar"></div></div></div>
     <div class="scores">${S.teams.map(t => `<div class="score" style="--c:${t.color}"><span>${esc(t.name)}</span><b>${score(t.id)}</b></div>`).join("")}
+      ${S.session && SYNC.on() ? `<button class="join-chip" id="join-chip" title="Unirse desde el celular">Sesión <b>${S.session}</b></button>` : ""}
       <button class="gear" id="gear" title="Panel del presentador">⚙</button></div>
   </header>
   <nav class="tabs">${TABS.map(([id, n]) => `<button data-tab="${id}" class="${S.tab === id ? "on" : ""}">${n}</button>`).join("")}</nav>`;
@@ -242,6 +274,7 @@ function renderMain() {
   $("#app").innerHTML = header() + `<main id="view"></main>`;
   document.querySelectorAll("[data-tab]").forEach(b => b.onclick = () => { S.tab = b.dataset.tab; save(); renderMain(); });
   $("#gear").onclick = hostPanel;
+  const jc = $("#join-chip"); if (jc) jc.onclick = () => modal(`<h2>Únete desde tu celular</h2>${joinBox()}`, "join-modal");
   const v = $("#view");
   ({ caso: viewCase, sospechosos: viewSuspects, evidencias: viewEvidence, linea: viewTimeline, fantasma: viewGhost, acusacion: viewAccuse })[S.tab](v);
 }
@@ -252,14 +285,14 @@ function viewCase(v) {
     <div class="case-left">
       <h2>La víctima</h2>
       <div class="victim"><div class="portrait big" style="--c:#9b8b6a">EM</div>
-      <div><h3>${esc(C.victim)}</h3><p>Viuda, coleccionista de arte, dueña de esta casa. Murió la noche del 24 de octubre de ${C.year}, durante el Baile de Ánimas.</p></div></div>
+      <div><h3>${esc(C.victim)}</h3><p>Viuda, coleccionista de arte, dueña de esta casa. Murió la noche del ${fillDates("{d:0}")} de ${C.year}, durante el Baile de Ánimas.</p></div></div>
       <h2>Lo que deben descubrir</h2>
       <ol class="goals"><li><b>Quién</b> la mató</li><li><b>Cómo</b> lo hizo</li><li><b>Por qué</b></li><li>Bonus: el <b>cómplice</b> y el <b>origen del veneno</b></li></ol>
       <h2>Cómo se juega</h2>
       <ul class="rules">
-        <li>Busquen las tarjetas de evidencia escondidas en la sala, la cocina, el baño, el cuarto y el patio. Solo <b>4</b> escondites llevan el <b>sello de Elvira</b>; cada pista resuelta trae un <b>eco</b>: un acertijo que lleva a la siguiente.</li>
+        <li>Busquen las tarjetas de evidencia escondidas en la sala, la cocina, el baño, el cuarto y el patio. Solo <b>4</b> escondites llevan el <b>sello de Elvira</b> («EM»): cada equipo puede reclamar solo <b>2 sellos</b>; los otros 2 son del otro equipo; cada pista resuelta trae un <b>eco</b>: un acertijo que lleva a la siguiente. Cada tarjeta trae dos cosas: la <b>pista del crimen</b> (el documento, para resolver el caso) y el <b>siguiente escondite</b> (solo sirve para encontrar otra tarjeta).</li>
         <li>Escaneen el QR con el celular, respondan la pregunta y lean la pista <b>en secreto</b>.</li>
-        <li>Escriban aquí el <b>sello</b> que les da el celular para ganar puntos.</li>
+        <li>Con el celular unido a la sesión, los puntos llegan solos a esta pantalla.</li>
         <li>Sin celular: escriban el código de la tarjeta aquí y respondan en pantalla (todos lo verán).</li>
         <li>${S.revealOnPhase ? "Al cambiar de fase, la casa revela a todos las evidencias encontradas." : "Las evidencias son privadas hasta el final."}</li>
       </ul>
@@ -291,7 +324,7 @@ function viewEvidence(v) {
   v.innerHTML = `<section class="evidence">
     <form class="claim" id="claim">
       <div class="claim-label">¿Encontraron algo?</div>
-      <input id="claim-input" placeholder="Sello o código de la tarjeta" autocomplete="off" autocapitalize="characters">
+      <input id="claim-input" placeholder="Código de la tarjeta (sin celular)" autocomplete="off" autocapitalize="characters">
       <div class="claim-teams">${S.teams.map((t, i) => `<button type="submit" class="btn team-btn" data-team="${t.id}" style="--c:${t.color}">${esc(t.name)}</button>`).join("")}</div>
     </form>
     <div class="ev-count">${claimed.length} de ${C.evidence.length} pistas encontradas</div>
@@ -327,12 +360,19 @@ function openClaimed(code) {
   modal(`<h2>${esc(e.title)}</h2>${docHtml(e)}<div class="found-by" style="color:${t.color}">Encontrada por ${esc(t.name)}</div>`, "doc-modal");
 }
 
-function claim(ev, teamId, isPublic) {
+const SEAL_MAX = 2;
+const sealsOf = (rows, teamId, except) => rows.filter(([code, t]) => t === teamId && code !== except && (byCode(code) || {}).start).length;
+const sealFull = (ev, teamId) => ev.start && sealsOf(Object.entries(S.claims).map(([k, c]) => [k, c.team]), teamId, ev.code) >= SEAL_MAX;
+const sealToast = teamId => { const t = team(teamId); SFX.wrong(); toast(`<b>${esc(t.name)}</b> ya tiene sus ${SEAL_MAX} sellos EM. Esa pista es del otro equipo.`, t.color); };
+
+function claim(ev, teamId, isPublic, fromSync) {
   if (S.claims[ev.code]) {
     const t = team(S.claims[ev.code].team);
     toast(`«${esc(ev.title)}» ya fue reclamada por <b>${esc(t.name)}</b>`, t.color); SFX.wrong(); return false;
   }
+  if (!fromSync && sealFull(ev, teamId)) { sealToast(teamId); return false; }
   S.claims[ev.code] = { team: teamId, at: Date.now(), public: !!isPublic };
+  if (!fromSync && S.session && SYNC.on()) SYNC.claim(S.session, teamId, ev.code);
   const pts = ev.puzzle ? C.points.puzzle : C.points.evidence;
   addPts(teamId, pts, ev.title);
   const t = team(teamId);
@@ -349,6 +389,7 @@ function claimInput(raw, teamId) {
   const ev = byCode(val.replace(/\s/g, ""));
   if (!ev) { SFX.wrong(); toast("La casa no reconoce ese código…"); $("#claim-input").select(); return; }
   if (S.claims[ev.code]) { claim(ev, teamId); return; }
+  if (sealFull(ev, teamId)) { sealToast(teamId); return; }
   askOnScreen(ev, teamId);
 }
 
@@ -381,7 +422,7 @@ function viewTimeline(v) {
   autos.forEach(a => (a.timeline || []).forEach(([t, txt]) => items.push({ t, txt, src: a.title, color: "#cfc3a3" })));
   claimed.filter(e => S.claims[e.code].public).forEach(e => (e.timeline || []).forEach(([t, txt]) => items.push({ t, txt, src: e.title, color: team(S.claims[e.code].team).color })));
   items.sort((a, b) => tkey(a.t) - tkey(b.t));
-  v.innerHTML = `<section class="timeline"><h2>La noche del 24 de octubre de ${C.year}</h2>
+  v.innerHTML = `<section class="timeline"><h2>La noche del ${fillDates("{d:0}")} de ${C.year}</h2>
     ${items.length ? `<ol>${items.map(i => `<li style="--c:${i.color}"><time>${i.t}</time><div><p>${esc(i.txt)}</p><small>${esc(i.src)}</small></div></li>`).join("")}</ol>` : `<p class="center">Aún no hay hechos públicos.</p>`}
     <p class="small center">Solo aparecen hechos de evidencias públicas.</p></section>`;
 }
@@ -454,21 +495,24 @@ function optionsFor(field) {
 const FIELDS = ["culprit", "method", "motive", "accomplice", "source"];
 function viewAccuse(v) {
   if (S.revealed) return viewResults(v);
+  const remote = SYNC.on() && !!S.session;
   v.innerHTML = `<section class="accuse">
     <h2>${S.finished ? "La medianoche ha llegado. Acusen." : "Acusación final"}</h2>
-    <p class="small center">Cada equipo sella su acusación en secreto. Solo hay un intento.</p>
+    <p class="small center">${remote ? "Cada equipo sella su acusación desde un celular, en la pestaña Acusación. Solo hay un intento. La verdad se revela cuando los dos equipos hayan votado." : "Cada equipo sella su acusación en secreto. Solo hay un intento."}</p>
     <div class="acc-cols">${S.teams.map(t => {
       const a = S.accusations[t.id];
-      return `<div class="acc" style="--c:${t.color}"><h3>${esc(t.name)}</h3>${a ? `<div class="sealed">Acusación sellada</div>` : `
-        <form data-acc="${t.id}">${FIELDS.map(f => `<label>${esc(C.accusation[f].label)}<select name="${f}" required><option value="">—</option>${optionsFor(f).map(([id, n]) => `<option value="${id}">${esc(n)}</option>`).join("")}</select></label>`).join("")}
-        <button class="btn" style="--c:${t.color}">Sellar acusación</button></form>`}</div>`; }).join("")}</div>
-    <div class="center"><button class="btn big" id="reveal" ${Object.keys(S.accusations).length ? "" : "disabled"}>Revelar la verdad</button></div>
+      const form = `<form data-acc="${t.id}">${FIELDS.map(f => `<label>${esc(C.accusation[f].label)}<select name="${f}" required><option value="">—</option>${optionsFor(f).map(([id, n]) => `<option value="${id}">${esc(n)}</option>`).join("")}</select></label>`).join("")}
+        <button class="btn" style="--c:${t.color}">Sellar acusación</button></form>`;
+      return `<div class="acc" style="--c:${t.color}"><h3>${esc(t.name)}</h3>${a ? `<div class="sealed">Acusación sellada</div>` : remote
+        ? `<div class="sealed waiting">Esperando su veredicto…</div><details class="acc-manual"><summary>Sellar desde la TV (sin celular)</summary>${form}</details>` : form}</div>`; }).join("")}</div>
+    <div class="center"><button class="btn big" id="reveal" ${(remote ? Object.keys(S.accusations).length >= S.teams.length : Object.keys(S.accusations).length) ? "" : "disabled"}>Revelar la verdad</button></div>
   </section>`;
   v.querySelectorAll("[data-acc]").forEach(f => f.onsubmit = e => {
     e.preventDefault();
     const d = Object.fromEntries(new FormData(f));
     if (!confirm(`¿Sellar la acusación de ${team(f.dataset.acc).name}? No se podrá cambiar.`)) return;
     S.accusations[f.dataset.acc] = d; save(); SFX.bell(262, 3, 0.3); renderMain();
+    if (remote) SYNC.accuse(S.session, f.dataset.acc, d, "TV").catch(() => {});
   });
   $("#reveal").onclick = () => {
     if (!S.finished) { S.finished = true; S.paused = true; S.pausedAt = Date.now(); SFX.heartbeat(false); }
@@ -508,6 +552,7 @@ function hostPanel() {
     <h3>Opciones</h3>
     <label class="opt"><input type="checkbox" id="o-tts" ${S.tts ? "checked" : ""}> Voz del fantasma (narración en voz alta)</label>
     <label class="opt">Voz: <select id="o-voice"><option value="" ${!S.voiceName ? "selected" : ""}>Elvira (voz grabada)</option>${esVoices().map(v => `<option value="${esc(v.name)}" ${S.voiceName === v.name ? "selected" : ""}>${esc(v.name)} (${esc(v.lang)})</option>`).join("")}</select> <button class="btn ghost" id="o-vtest">Probar</button></label>
+    <label class="opt">Fecha del crimen (día y mes): <input type="date" id="o-date" value="${esc(S.dateOverride || "")}"> <small>vacío = el día en que se juega (${esc(fillDates("{d:0}"))})</small></label>
     <label class="opt"><input type="checkbox" id="o-music" ${S.music ? "checked" : ""}> Ambiente y efectos de sonido</label>
     <label class="opt"><input type="checkbox" id="o-rev" ${S.revealOnPhase ? "checked" : ""}> Revelar evidencias a todos al cambiar de fase</label>
     <div class="host-links"><a href="#/guia" target="_blank">Guía y solución</a> · <a href="#/imprimir" target="_blank">Imprimir pistas</a> · <button class="linkish" id="h-reset">Reiniciar juego</button></div>`, "host");
@@ -520,11 +565,12 @@ function hostPanel() {
   $("#h-pub", m.el).onclick = () => { Object.values(S.claims).forEach(c => c.public = true); save(); m.close(); renderMain(); };
   m.el.querySelectorAll("[data-p]").forEach(b => b.onclick = () => { addPts(b.dataset.p, +b.dataset.v, "Presentador"); renderMain(); hostPanel(); m.close(); });
   $("#o-voice", m.el).onchange = e => { S.voiceName = e.target.value; save(); pickVoice(); };
-  $("#o-vtest", m.el).onclick = () => { const t = S.tts; S.tts = true; speak("Soy Elvira Montenegro. Esta noche, veinticuatro de octubre, me ayudarán a descansar."); S.tts = t; };
+  $("#o-vtest", m.el).onclick = () => { const t = S.tts; S.tts = true; speak("Soy Elvira Montenegro. Esta noche me ayudarán a descansar."); S.tts = t; };
+  $("#o-date", m.el).onchange = e => { S.dateOverride = e.target.value; save(); toast(`Fecha de la historia: ${esc(fillDates("{d:0}"))}`); renderMain(); };
   $("#o-tts", m.el).onchange = e => { S.tts = e.target.checked; if (!S.tts) hush(); save(); };
   $("#o-music", m.el).onchange = e => { S.music = e.target.checked; S.music ? SFX.startAmbient() : (SFX.stopAmbient(), SFX.heartbeat(false), heartState = 0); save(); };
   $("#o-rev", m.el).onchange = e => { S.revealOnPhase = e.target.checked; save(); };
-  $("#h-reset", m.el).onclick = () => { if (confirm("¿Borrar todo el progreso y volver al inicio?")) { const keep = { tts: S.tts, music: S.music, duration: S.duration, teams: S.teams, voiceName: S.voiceName }; S = Object.assign(fresh(), keep); save(); hush(); SFX.heartbeat(false); SFX.stopAmbient(); m.close(); render(); } };
+  $("#h-reset", m.el).onclick = () => { if (confirm("¿Borrar todo el progreso y volver al inicio?")) { const keep = { tts: S.tts, music: S.music, duration: S.duration, teams: S.teams, voiceName: S.voiceName, dateOverride: S.dateOverride }; S = Object.assign(fresh(), keep); save(); hush(); SFX.heartbeat(false); SFX.stopAmbient(); m.close(); render(); } };
 }
 
 // ---------- celular ----------
@@ -535,25 +581,40 @@ function renderPhone(code) {
   if (!ev) { $("#app").innerHTML = `<div class="phone-wrap"><h1 class="title sm">${esc(C.title)}</h1><p class="center">Esta pista no existe… o el fantasma la escondió mejor.</p></div>`; return; }
   const ps = phoneState();
   const solved = ps[ev.code];
+  const me = getMe();
+  remoteDate = me && me.date || null;
   $("#app").innerHTML = `<div class="phone-wrap">
+    ${teamBar(me)}
     <div class="kicker">${esc(C.title)}</div>
     <div class="q-type">Evidencia ${ev.code} · ${esc(ev.room)}</div>
     <h1 class="title sm">${esc(ev.title)}</h1>
-    ${solved ? `${docHtml(ev)}<div class="seal-box"><div>Sello para reclamar puntos</div><b>${esc(ev.seal)}</b><small>Escríbelo en la pantalla principal y elige tu equipo. ¡Que el otro equipo no lo vea!</small></div>` : `
+    ${solved ? `${docHtml(ev)}${claimBox(ev, solved, me)}` : `<div id="pq-wrap">
       <div class="q-type">${esc(ev.q.type)}</div>
       <p class="q-text">${esc(ev.q.text).replace(/\n/g, "<br>")}</p>
       <form id="pq"><input id="pq-in" placeholder="Tu respuesta" autocomplete="off"><button class="btn">Responder</button></form>
-      <div class="q-msg" id="pq-msg"></div>`}
+      <div class="q-msg" id="pq-msg"></div></div>`}
   </div>`;
-  if (solved) return;
+  const done = r => { ps[ev.code] = r; localStorage.setItem(PHONE_KEY, JSON.stringify(ps)); renderPhone(code); window.scrollTo(0, 0); };
+  const sealLocked = () => ev.start ? SYNC.claims(me.session, 0).then(rows => sealsOf((rows || []).map(r => [r.code, r.team]), me.team, ev.code) >= SEAL_MAX) : Promise.resolve(false);
+  const lockSeal = () => { $("#pq-wrap").innerHTML = `<div class="seal-box"><div>Sello del otro equipo</div><b>✕</b><small>Tu equipo ya encontró sus ${SEAL_MAX} sellos EM. Deja esta tarjeta en su lugar: es del otro equipo.</small></div>`; };
+  const tryClaim = () => SYNC.player(getPlayer().id).then(async r => {
+    if (!(r && r.session_id === me.session && r.team === me.team && r.status === "ok")) return "pending";
+    if (await sealLocked()) return "sealfull";
+    return SYNC.claim(me.session, me.team, ev.code);
+  }).catch(() => "error").then(r => r === "sealfull" ? (delete ps[ev.code], localStorage.setItem(PHONE_KEY, JSON.stringify(ps)), renderPhone(code), setTimeout(lockSeal, 0)) : done(r));
+  if (solved) { const b = $("#retry"); if (b) b.onclick = () => { b.disabled = true; tryClaim(); }; return; }
+  if (ev.start && me && SYNC.on()) sealLocked().then(x => { if (x && $("#pq-wrap")) lockSeal(); }).catch(() => {});
   $("#pq").onsubmit = e => {
     e.preventDefault();
     const inp = $("#pq-in");
     if (checkAnswer(ev, inp.value)) {
-      ps[ev.code] = true; localStorage.setItem(PHONE_KEY, JSON.stringify(ps));
       try { SFX.found(); } catch (e2) {}
       if (navigator.vibrate) navigator.vibrate([60, 40, 120]);
-      renderPhone(code); window.scrollTo(0, 0);
+      if (me && SYNC.on()) {
+        inp.disabled = true; $("#pq-msg").textContent = "Avisando a la casa…";
+        tryClaim();
+      }
+      else done(true);
     } else {
       try { SFX.wrong(); } catch (e2) {}
       if (navigator.vibrate) navigator.vibrate(300);
@@ -561,6 +622,255 @@ function renderPhone(code) {
       const iv = setInterval(() => { msg.textContent = `Incorrecto. Espera ${n--}s para intentar otra vez.`; if (n < 0) { clearInterval(iv); msg.textContent = ""; inp.disabled = false; inp.select(); } }, 1000);
     }
   };
+}
+
+// ---------- sesiones (TV ↔ celulares) ----------
+const ME_KEY = "montenegro-me-v1";
+const getMe = () => { try { return JSON.parse(localStorage.getItem(ME_KEY)); } catch (e) { return null; } };
+const setMe = m => m ? localStorage.setItem(ME_KEY, JSON.stringify(m)) : localStorage.removeItem(ME_KEY);
+const PLAYER_KEY = "montenegro-player-v1";
+const ADJ = ["cute", "angry", "hungry", "sleepy", "spooky", "brave", "sneaky", "grumpy", "lucky", "fuzzy", "silent", "dizzy", "wild", "shy", "jolly", "creepy", "fancy", "clumsy", "mighty", "witty"];
+const ANIMAL = ["kitty", "bird", "dragon", "owl", "raven", "bat", "fox", "panda", "wolf", "toad", "ghost", "spider", "llama", "otter", "moth", "badger", "lizard", "goose", "hamster", "squid"];
+const pick = a => a[Math.floor(Math.random() * a.length)];
+function getPlayer() {
+  let p = null; try { p = JSON.parse(localStorage.getItem(PLAYER_KEY)); } catch (e) {}
+  if (!p || !p.id) {
+    const id = crypto.randomUUID ? crypto.randomUUID() : "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c => (c ^ Math.random() * 16 >> c / 4).toString(16));
+    p = { id, name: `${pick(ADJ)}-${pick(ANIMAL)}` }; localStorage.setItem(PLAYER_KEY, JSON.stringify(p));
+  }
+  return p;
+}
+function rosterHtml(players) {
+  const recent = (players || []).filter(p => p.status !== "rejected" && Date.now() - Date.parse(p.seen_at) < 15 * 60000);
+  return S.teams.map(t => { const ps = recent.filter(p => p.team === t.id);
+    return `<div class="roster-team" style="--c:${t.color}"><div class="roster-head"><span>${esc(t.name)}</span><b>${ps.length}</b></div>
+      <div class="roster-names">${ps.map(p => `<span class="${p.status === "pending" ? "pending" : ""}">${esc(p.name)}${p.status === "pending" ? " ?" : ""}</span>`).join("") || `<i>nadie todavía</i>`}</div></div>`; }).join("");
+}
+let rosterCache = [];
+const joinUrl = () => `${baseUrl()}#/j/${S.session}`;
+function ensureSession() {
+  if (!SYNC.on() || S.session) return;
+  S.session = SYNC.newCode(); S.syncAfter = 0; save();
+}
+function joinBox() {
+  if (!SYNC.on() || !S.session) return "";
+  return `<div class="join-box"><div class="join-qr">${qrSvg(joinUrl())}</div>
+    <div class="join-txt"><div class="kicker">Únete desde tu celular</div><b class="join-code">${S.session}</b>
+    <small>Escanea el código, elige tu equipo y escanea las pistas: los puntos llegan solos a la pantalla.</small></div></div>
+    <div class="roster">${rosterHtml(rosterCache)}</div>`;
+}
+const sessionSnapshot = () => ({ teams: S.teams.map(t => ({ id: t.id, name: t.name, color: t.color, score: score(t.id) })),
+  started: !!S.started, finished: !!S.finished, phase: S.phase, phaseName: C.phases[S.phase].name, date: storyDay(),
+  claims: Object.fromEntries(Object.entries(S.claims).map(([k, c]) => [k, [c.team, c.public ? 1 : 0]])), acc: Object.keys(S.accusations), revealed: !!S.revealed });
+let syncBusy = false, syncAt = 0, syncPushed = "", syncPushAt = 0, syncFail = 0;
+function syncTick() {
+  const r = location.hash.replace(/^#\/?/, "");
+  if (!S.session || !SYNC.on() || syncBusy || r.startsWith("e/") || r.startsWith("j/") || r === "yo" || r === "imprimir" || r === "guia") return;
+  const now = Date.now();
+  if (now - syncAt < (syncFail ? Math.min(30000, 2500 * 2 ** syncFail) : 2500)) return;
+  syncAt = now; syncBusy = true;
+  (async () => {
+    const snap = JSON.stringify(sessionSnapshot());
+    if (snap !== syncPushed || now - syncPushAt > 60000) { await SYNC.pushState(S.session, JSON.parse(snap)); syncPushed = snap; syncPushAt = now; }
+    {
+      rosterCache = await SYNC.players(S.session) || [];
+      document.querySelectorAll(".roster").forEach(el => { el.innerHTML = rosterHtml(rosterCache); });
+    }
+    renderApprovals();
+    if (S.started && !S.revealed && Object.keys(S.accusations).length < S.teams.length) {
+      let ch = false;
+      for (const a of await SYNC.accusations(S.session) || []) {
+        if (S.accusations[a.team] || !team(a.team)) continue;
+        S.accusations[a.team] = Object.fromEntries(FIELDS.map(f => [f, String((a.data || {})[f] || "")]));
+        ch = true; toast(`<b>${esc(team(a.team).name)}</b> selló su acusación`, team(a.team).color); SFX.bell(262, 3, 0.3);
+      }
+      if (ch) { save(); if (S.tab === "acusacion" && !document.querySelector(".overlay")) renderMain(); }
+    }
+    const rows = await SYNC.claims(S.session, S.syncAfter || 0);
+    let changed = false;
+    for (const row of rows || []) {
+      S.syncAfter = Math.max(S.syncAfter || 0, row.id);
+      const ev = byCode(row.code);
+      if (ev && !S.claims[ev.code] && S.started) { claim(ev, row.team, false, true); changed = true; }
+    }
+    if (rows && rows.length) save();
+    if (changed && S.started && !document.querySelector(".overlay")) renderMain();
+    syncFail = 0;
+  })().catch(() => { syncFail++; }).finally(() => { syncBusy = false; });
+}
+let apprSig = "";
+function renderApprovals() {
+  const pend = rosterCache.filter(p => p.status === "pending" && Date.now() - Date.parse(p.seen_at) < 15 * 60000);
+  let box = document.getElementById("approvals");
+  if (!pend.length) { if (box) box.remove(); apprSig = ""; return; }
+  if (!box) {
+    box = document.createElement("div"); box.id = "approvals"; document.body.appendChild(box);
+    box.onclick = e => {
+      const b = e.target.closest("[data-appr]"); if (!b) return;
+      const ok = b.dataset.appr === "ok", pid = b.dataset.pid, p = rosterCache.find(x => x.id === pid);
+      b.closest(".appr").remove();
+      if (p) p.status = ok ? "ok" : "rejected";
+      SYNC.setStatus(pid, ok ? "ok" : "rejected").catch(() => toast("No se pudo guardar. Intenta otra vez."));
+      document.querySelectorAll(".roster").forEach(el => { el.innerHTML = rosterHtml(rosterCache); });
+      apprSig = ""; renderApprovals();
+    };
+  }
+  const sig = pend.map(p => p.id + p.team).join();
+  if (sig === apprSig) return;
+  apprSig = sig;
+  box.innerHTML = `<div class="appr-title">Quieren unirse</div>${pend.map(p => { const t = team(p.team);
+    return `<div class="appr"><span><b>${esc(p.name)}</b> → <b style="color:${t.color}">${esc(t.name)}</b></span>
+      <button class="btn sm" data-appr="ok" data-pid="${esc(p.id)}">Aprobar</button><button class="btn sm ghost" data-appr="no" data-pid="${esc(p.id)}">Rechazar</button></div>`; }).join("")}`;
+}
+function teamBar(me) {
+  if (!SYNC.on()) return "";
+  if (!me) return `<div class="team-bar off">Sin equipo: escanea el código de la pantalla para unirte</div>`;
+  return `<a class="team-bar" href="#/yo" style="--c:${me.color}"><span>${esc(me.name)} · ${esc(getPlayer().name)}${me.status && me.status !== "ok" ? " (en espera)" : ""}</span><b>Mi equipo →</b></a>`;
+}
+function claimBox(ev, result, me) {
+  const pts = ev.puzzle ? C.points.puzzle : C.points.evidence;
+  if (result === "ok") return `<div class="seal-box ok" style="--c:${me ? me.color : "var(--gold)"}"><div>¡Pista para ${esc(me ? me.name : "tu equipo")}!</div><b>+${pts}</b><small>Ya aparece en la pantalla. ¡Que el otro equipo no vea el eco!</small></div>`;
+  if (result === "taken") return `<div class="seal-box"><div>Llegaron tarde</div><b>✕</b><small>El otro equipo ya reclamó esta pista. Sin puntos, pero lo que leíste sigue siendo cierto.</small></div>`;
+  const code = `<small style="display:block;margin-top:.6rem">Sin celular conectado: escriban el código «${esc(ev.code)}» en la pantalla principal y respondan ahí.</small>`;
+  const retry = me && SYNC.on() ? `<button class="btn" id="retry" style="--c:${me.color}">Sumar a ${esc(me.name)}</button>` : "";
+  if (result === "pending") return `<div class="seal-box"><div>En espera</div><b>⌛</b><small>El organizador todavía no confirma tu equipo. Cuando te apruebe, toca el botón.</small>${retry}</div>`;
+  if (result === "error") return `<div class="seal-box"><div>Sin conexión</div><b>!</b><small class="warn">No hubo conexión con la casa.</small>${retry}${code}</div>`;
+  return `<div class="seal-box"><div>Sin equipo</div><b>?</b><small>Este celular no está unido a la partida: escanea el QR de la pantalla principal y elige equipo.</small>${retry}${code}</div>`;
+}
+async function renderJoin(code) {
+  document.body.className = "phone";
+  code = code.toUpperCase();
+  const wrap = h => { $("#app").innerHTML = `<div class="phone-wrap"><div class="kicker">${esc(C.title)}</div>${h}</div>`; };
+  if (!SYNC.on()) return wrap(`<p class="center">Esta casa no tiene sesiones activas. Pregúntale al presentador.</p>`);
+  wrap(`<p class="center">Buscando la sesión ${esc(code)}…</p>`);
+  let st = null;
+  try { st = await SYNC.getState(code); } catch (e) { return wrap(`<p class="center">No hay conexión. Intenta otra vez.</p><button class="btn" onclick="location.reload()">Reintentar</button>`); }
+  if (!st) return wrap(`<p class="center">La sesión <b>${esc(code)}</b> no existe o ya terminó. Escanea el código que aparece en la pantalla.</p>`);
+  const me = getMe();
+  wrap(`<h1 class="title sm">¿De qué equipo eres?</h1><p class="center">Sesión <b>${esc(code)}</b> · eres <b>${esc(getPlayer().name)}</b></p>
+    <div class="team-pick">${st.teams.map(t => `<button class="btn big ${me && me.session === code && me.team === t.id ? "on" : ""}" data-pick="${t.id}" style="--c:${t.color}">${esc(t.name)}</button>`).join("")}</div>
+    <p class="small center">Elige el mismo equipo que tus compañeros. Lo puedes cambiar después.</p>`);
+  document.querySelectorAll("[data-pick]").forEach(b => b.onclick = async () => {
+    const t = st.teams.find(x => x.id === b.dataset.pick), pl = getPlayer();
+    document.querySelectorAll("[data-pick]").forEach(x => { x.disabled = true; });
+    let status = "ok";
+    if (st.started && !st.finished) {
+      let prev = null; try { prev = await SYNC.player(pl.id); } catch (e) {}
+      status = prev && prev.session_id === code && prev.team === t.id && prev.status === "ok" ? "ok" : "pending";
+    }
+    setMe({ session: code, team: t.id, name: t.name, color: t.color, date: st.date, status, seen: Date.now() });
+    try { await SYNC.join(code, pl, t.id, status); } catch (e) {}
+    location.hash = "#/yo";
+  });
+}
+let meTimer = null, meSig = "";
+async function renderMe() {
+  document.body.className = "phone";
+  clearTimeout(meTimer);
+  const me = getMe();
+  const wrap = h => { $("#app").innerHTML = `<div class="phone-wrap"><div class="kicker">${esc(C.title)}</div>${h}</div>`; };
+  if (!me || !SYNC.on()) return wrap(`<p class="center">Todavía no tienes equipo. Escanea el código de la pantalla principal.</p>`);
+  const again = () => { meTimer = setTimeout(() => { if (location.hash === "#/yo") renderMe(); }, 5000); };
+  let st, rows;
+  let row;
+  try { [st, rows, row] = await Promise.all([SYNC.getState(me.session), SYNC.claims(me.session, 0), SYNC.player(getPlayer().id)]); }
+  catch (e) { if (!meSig) wrap(`<p class="center">Sin conexión… reintentando.</p>`); return again(); }
+  if (!st) { setMe(null); meSig = ""; return wrap(`<p class="center">La sesión <b>${esc(me.session)}</b> terminó. Escanea el nuevo código de la pantalla.</p>`); }
+  const t = st.teams.find(x => x.id === me.team) || me;
+  remoteDate = st.date || null;
+  if (!row || row.session_id !== me.session) {
+    row = { session_id: me.session, team: me.team, status: st.started && !st.finished ? "pending" : "ok" };
+    SYNC.join(me.session, getPlayer(), me.team, row.status).catch(() => {}); me.seen = Date.now();
+  } else if (!me.seen || Date.now() - me.seen > 60000) { me.seen = Date.now(); SYNC.seen(getPlayer().id).catch(() => {}); }
+  setMe({ ...me, name: t.name, color: t.color, date: st.date, seen: me.seen, status: row.status });
+  if (row.status !== "ok") {
+    const sig0 = "st:" + row.status;
+    if (sig0 !== meSig) {
+      meSig = sig0;
+      wrap(row.status === "pending"
+        ? `<h1 class="title sm" style="color:${t.color}">${esc(t.name)}</h1><p class="center">Eres <b>${esc(getPlayer().name)}</b>.</p>
+           <div class="seal-box"><div>En espera</div><b>⌛</b><small>El organizador tiene que confirmarte en la pantalla principal. Mientras tanto no puedes ver las pruebas del equipo.</small></div>
+           <p class="center"><a href="#/j/${esc(me.session)}">Elegir otro equipo</a></p>`
+        : `<div class="seal-box"><div>No confirmado</div><b>✕</b><small>El organizador no aprobó tu entrada a ${esc(t.name)}. Habla con él y vuelve a elegir equipo.</small></div>
+           <p class="center"><a href="#/j/${esc(me.session)}">Elegir equipo</a></p>`);
+    }
+    return again();
+  }
+  const sc = st.claims || {};
+  const teamCodes = [...new Set([...(rows || []).filter(r => r.team === me.team).map(r => r.code), ...Object.keys(sc).filter(k => sc[k][0] === me.team)])];
+  const mine = teamCodes.map(byCode).filter(Boolean);
+  const pub = Object.keys(sc).filter(k => sc[k][0] !== me.team && sc[k][1]).map(byCode).filter(Boolean);
+  const sealed = (st.acc || []).includes(me.team) || accSent === me.session + me.team;
+  const sig = JSON.stringify([st, mine.map(e => e.code), pub.map(e => e.code), sealed]);
+  if (sig === meSig) return again();
+  meSig = sig;
+  meLast = { st, me: getMe(), t, mine, pub, sealed };
+  if (!(meTab === "acusacion" && $("#me-acc") && !sealed && !st.revealed)) drawMe();
+  again();
+}
+let meTab = "evidencias", meLast = null, accDraft = {}, accSent = "";
+const meOpen = new Set();
+const ME_TABS = [["caso", "Caso"], ["sospechosos", "Sospechosos"], ["evidencias", "Evidencias"], ["linea", "Línea"], ["acusacion", "Acusación"]];
+function meView({ st, me, t, mine, pub, sealed }) {
+  const other = st.teams.find(x => x.id !== me.team) || t;
+  const item = (k, title, small, body) => `<details class="me-ev" data-k="${esc(k)}"><summary><span>${esc(title)}</span><small>${esc(small)}</small></summary>${body}</details>`;
+  const autos = [];
+  C.phases.forEach((p, i) => { if (i <= st.phase || st.finished) p.evidence.forEach(id => autos.push({ id, ...C.autoEvidence[id] })); });
+  if (meTab === "caso") {
+    const f = C.autoEvidence.forense;
+    return `<h2>La víctima</h2><p>${esc(C.victim)}. Viuda, coleccionista de arte, dueña de esta casa. Murió la noche del ${fillDates("{d:0}")} de ${C.year}, durante el Baile de Ánimas.</p>
+      <h2>Lo que deben descubrir</h2><ol class="goals"><li><b>Quién</b> la mató</li><li><b>Cómo</b> lo hizo</li><li><b>Por qué</b></li><li>Bonus: el <b>cómplice</b> y el <b>origen del veneno</b></li></ol>
+      ${item("forense", f.title, "Oficial", docHtml(f))}`;
+  }
+  if (meTab === "sospechosos") return C.suspects.map(s => `<details class="me-ev me-sus" data-k="s-${esc(s.id)}" style="--c:${s.color}"><summary><span>${esc(s.name)}</span><small>${esc(s.role)}</small></summary>
+    <p class="small">${s.age} años. ${esc(s.bio)}</p><blockquote>«${esc(s.statement)}»</blockquote>
+    ${st.phase >= 1 || st.finished ? `<blockquote class="later">«${esc(s.later)}»</blockquote>` : `<div class="sealed-note">Más declaraciones tras el apagón…</div>`}</details>`).join("");
+  if (meTab === "evidencias") {
+    const rev = [...autos.filter(a => a.id !== "forense").map(a => item(a.id, a.title, "Oficial", docHtml(a))), ...pub.map(e => item(e.code, e.title, other.name, docHtml(e)))];
+    return `<h2>De ${esc(t.name)} (${mine.length})</h2>${mine.length ? mine.map(e => item(e.code, e.title, e.room, docHtml(e))).join("") : `<p class="center small">Todavía nada. Busquen el sello EM.</p>`}
+      <h2>Reveladas</h2>${rev.join("") || `<p class="center small">La casa revela las evidencias al cambiar de fase.</p>`}`;
+  }
+  if (meTab === "linea") {
+    const items = [], add = (e, color) => (e.timeline || []).forEach(([h, txt]) => items.push({ h, txt, src: e.title, color }));
+    autos.forEach(a => add(a, "#cfc3a3")); mine.forEach(e => add(e, t.color)); pub.forEach(e => add(e, other.color));
+    items.sort((a, b) => tkey(a.h) - tkey(b.h));
+    return `<section class="timeline me-time"><h2>La noche del ${fillDates("{d:0}")} de ${C.year}</h2>
+      ${items.length ? `<ol>${items.map(i => `<li style="--c:${i.color}"><time>${i.h}</time><div><p>${esc(i.txt)}</p><small>${esc(i.src)}</small></div></li>`).join("")}</ol>` : `<p class="center small">Aún no hay hechos.</p>`}
+      <p class="small center">Hechos de las evidencias oficiales, las de tu equipo y las reveladas.</p></section>`;
+  }
+  if (st.revealed) return `<div class="seal-box"><div>La verdad fue revelada</div><b>✦</b><small>Miren la pantalla principal.</small></div>`;
+  if (sealed) return `<div class="seal-box ok" style="--c:${t.color}"><div>Acusación sellada</div><b>✓</b><small>${(st.acc || []).length >= st.teams.length ? "Los dos equipos ya votaron. Miren la pantalla principal." : "Esperando el veredicto del otro equipo. La pantalla lo mostrará cuando los dos hayan votado."}</small></div>`;
+  if (!st.started) return `<p class="center">La acusación se abre cuando empiece la partida.</p>`;
+  return `<p class="small center">${st.finished ? "La medianoche llegó. Acusen." : "Pueden acusar cuando quieran, pero hay un solo intento por equipo."} Cualquiera del equipo puede sellarla: pónganse de acuerdo antes.</p>
+    <form id="me-acc" class="me-acc">${FIELDS.map(f => `<label>${esc(C.accusation[f].label)}<select name="${f}" required><option value="">—</option>${optionsFor(f).map(([id, n]) => `<option value="${id}" ${accDraft[f] === id ? "selected" : ""}>${esc(n)}</option>`).join("")}</select></label>`).join("")}
+    <button class="btn" style="--c:${t.color}">Sellar acusación de ${esc(t.name)}</button></form>`;
+}
+function drawMe() {
+  const L = meLast, { st, me, t } = L, y = window.scrollY;
+  $("#app").innerHTML = `<div class="phone-wrap"><div class="kicker">${esc(C.title)}</div>
+    <h1 class="title sm" style="color:${t.color}">${esc(t.name)}</h1>
+    <p class="center small">Eres <b>${esc(getPlayer().name)}</b></p>
+    <div class="me-scores">${st.teams.map(x => `<div class="score" style="--c:${x.color}"><span>${esc(x.name)}</span><b>${x.score}</b></div>`).join("")}</div>
+    <p class="center small">${esc(st.finished ? "La partida terminó" : st.started ? st.phaseName : "La partida aún no empieza")} · sesión ${esc(me.session)}</p>
+    <nav class="me-tabs">${ME_TABS.map(([id, n]) => `<button data-mtab="${id}" class="${meTab === id ? "on" : ""}">${n}</button>`).join("")}</nav>
+    <div class="me-view">${meView(L)}</div>
+    <p class="center small"><a href="#/j/${esc(me.session)}">Cambiar de equipo</a></p></div>`;
+  document.querySelectorAll("[data-mtab]").forEach(b => b.onclick = () => { meTab = b.dataset.mtab; drawMe(); });
+  document.querySelectorAll(".me-view details[data-k]").forEach(d => { if (meOpen.has(d.dataset.k)) d.open = true; d.ontoggle = () => { d.open ? meOpen.add(d.dataset.k) : meOpen.delete(d.dataset.k); }; });
+  const f = $("#me-acc");
+  if (f) {
+    f.onchange = () => { accDraft = Object.fromEntries(new FormData(f)); };
+    f.onsubmit = async e => {
+      e.preventDefault();
+      const d = Object.fromEntries(new FormData(f));
+      if (!confirm(`¿Sellar la acusación de ${t.name}? No se podrá cambiar.`)) return;
+      f.querySelector("button").disabled = true;
+      const r = await SYNC.accuse(me.session, me.team, d, getPlayer().name).catch(() => "error");
+      if (r === "error") { f.querySelector("button").disabled = false; toast("Sin conexión. Intenta otra vez."); return; }
+      accSent = me.session + me.team; meSig = ""; L.sealed = true; drawMe();
+    };
+  }
+  window.scrollTo(0, y);
 }
 
 // ---------- impresión ----------
@@ -622,7 +932,7 @@ function renderGuide() {
     <h2>2. Reglas para leer en voz alta</h2>
     <ul>
       <li>Dos equipos. El fantasma de Elvira narra; tú eres el inspector Ríos y árbitro.</li>
-      <li>Busquen tarjetas en sala, cocina, baño, cuarto y patio. Escaneen el QR, respondan la pregunta y lean la pista en secreto. Escriban el <b>sello</b> en la pantalla para sumar puntos.</li>
+      <li>Busquen tarjetas en sala, cocina, baño, cuarto y patio. Escaneen el QR, respondan la pregunta y lean la pista en secreto. Cada equipo puede reclamar solo 2 de los 4 sellos EM (la app bloquea el tercero) y sigue los ecos de esas 2 cadenas. Con el celular unido a la sesión, los puntos llegan solos; sin celular, escriben el código de la tarjeta en la TV.</li>
       <li>Puntos: pista +${C.points.evidence}, acertijo-candado +${C.points.puzzle}, acertijo relámpago +${C.points.riddle}, visión ${C.points.vision}. Acusación: culpable +${C.points.culprit}, método +${C.points.method}, motivo +${C.points.motive}, cómplice +${C.points.accomplice}, veneno +${C.points.source}.</li>
       <li>No se vale romper, abrir cajones con llave ni mover muebles pesados.</li>
     </ul>
@@ -638,10 +948,10 @@ function renderGuide() {
     <p>Puedes interpretar a los sospechosos si te preguntan: usa sus declaraciones. Solo Camila (sobre dónde estuvo) y Teo (sobre los cuadros) mienten.</p>
 
     <h2>4. Escondites, preguntas y respuestas</h2>
-    <table class="gt"><tr><th>Código</th><th>Pista</th><th>Lugar</th><th>Escondite (editable)</th><th>Respuesta</th><th>Sello</th><th>Cadena</th></tr>
+    <table class="gt"><tr><th>Código</th><th>Pista</th><th>Lugar</th><th>Escondite (editable)</th><th>Respuesta</th><th>Cadena</th></tr>
     ${C.evidence.map(e => `<tr><td><b>${e.code}</b></td><td>${esc(e.title)}${e.puzzle ? " <i>(acertijo-candado)</i>" : ""}</td><td>${esc(e.room)}</td>
       <td><input class="spot" data-spot="${e.code}" value="${esc(sp[e.code] || e.spot)}"><input class="spot hint" data-spot="${e.code}:hint" value="${esc(sp[e.code + ":hint"] || e.hint)}" title="Texto de la visión"></td>
-      <td>${esc(e.q.answers[0])}</td><td>${esc(e.seal)}</td><td>${e.start ? "<b>INICIO · pegar sello</b><br>" : ""}${e.next ? `→ ${e.next}` : "fin"}</td></tr>`).join("")}</table>
+      <td>${esc(e.q.answers[0])}</td><td>${e.start ? "<b>INICIO · pegar sello</b><br>" : ""}${e.next ? `→ ${e.next}` : "fin"}</td></tr>`).join("")}</table>
     <p class="small">La segunda línea de cada escondite es la «visión» que lee el fantasma cuando un equipo pide ayuda: actualízala si cambias el escondite.</p>
 
     <h2>5. Solución</h2>
@@ -665,11 +975,18 @@ function renderGuide() {
 
 // ---------- arranque ----------
 window.addEventListener("hashchange", render);
+window.addEventListener("pageshow", e => { if (e.persisted) render(); });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible") return;
+  const route = location.hash.replace(/^#\/?/, "");
+  if (route !== lastRoute || !$("#app").children.length) render();
+});
 document.addEventListener("keydown", e => {
   if (document.body.className !== "main" || e.target.matches("input,select,textarea")) return;
   if (e.key === "p" || e.key === "P") { $("#gear") && $("#gear").click(); }
 });
 document.addEventListener("pointerdown", () => { if (S.started && S.music && document.body.className === "main") SFX.startAmbient(); }, { once: true });
+window.__mg = { get S() { return S; }, recorded, story, renderMain };
 render();
 requestAnimationFrame(tickLoop);
 })();

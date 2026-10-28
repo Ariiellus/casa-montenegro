@@ -13,10 +13,18 @@ st, p = api("GET", f"/v9/projects/{NAME}")
 if st == 404:
     st, p = api("POST", "/v10/projects", {"name": NAME, "framework": None}); print("create project", st, p.get("error"))
 print("project", st, p.get("id"))
+envf = os.path.join(ROOT, ".env")
+if os.path.exists(envf):
+    for line in open(envf):
+        k, _, v = line.strip().partition("=")
+        if k in ("SUPABASE_URL", "SUPABASE_ANON_KEY") and v:
+            s_, r_ = api("POST", f"/v10/projects/{NAME}/env?upsert=true", {"key": k, "value": v, "type": "encrypted", "target": ["production", "preview", "development"]})
+            print("env", k, s_)
 files = []
 for d, dirs, fs in os.walk(ROOT):
-    dirs[:] = [x for x in dirs if x not in (".git", "tools")]
+    dirs[:] = [x for x in dirs if x not in (".git", "tools", "__pycache__", ".vercel")]
     for f in fs:
+        if f.startswith((".env", ".git")): continue
         full = os.path.join(d, f); rel = os.path.relpath(full, ROOT); b = open(full, "rb").read(); sha = hashlib.sha1(b).hexdigest()
         s, r = api("POST", "/v2/files", headers={"x-vercel-digest": sha, "Content-Type": "application/octet-stream", "Content-Length": str(len(b))}, raw=b)
         if s != 200: print("upload fail", rel, s, r); sys.exit(1)

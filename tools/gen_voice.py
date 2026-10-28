@@ -19,11 +19,18 @@ FX = "aecho=0.8:0.5:60:0.14,lowpass=f=8000,volume=1.3"
 OUIJA = {"SÍ": "Sí. Así es.", "NO": "No. No es así.", "QUIZÁS": "Quizás. Tal vez.",
          "NO LO SÉ": "No lo sé.", "PREGUNTA OTRA COSA": "Pregunta otra cosa."}
 
+NUM = ["primero", "dos", "tres", "cuatro", "cinco", "seis", "siete", "ocho", "nueve", "diez", "once", "doce", "trece",
+       "catorce", "quince", "dieciséis", "diecisiete", "dieciocho", "diecinueve", "veinte", "veintiuno", "veintidós",
+       "veintitrés", "veinticuatro", "veinticinco", "veintiséis", "veintisiete", "veintiocho", "veintinueve", "treinta",
+       "treinta y uno"]
+MES = r"(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre)"
+
 def spoken(t):
     if t in OUIJA:
         return OUIJA[t]
     for a, b in SAY:
         t = t.replace(a, b)
+    t = re.sub(r"\b(\d{1,2}) de " + MES, lambda m: NUM[int(m.group(1)) - 1] + " de " + m.group(2), t)
     return re.sub(r"[«»]", "", t)
 
 def main(path):
