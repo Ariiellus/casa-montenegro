@@ -252,3 +252,15 @@ body.phone{font-size:18px}
 .me-acc select{padding:.5rem;font:inherit;background:#1a1620;color:inherit;border:1px solid rgba(255,255,255,.2);border-radius:6px}
 .acc-manual{margin-top:.6rem}.acc-manual summary{cursor:pointer;color:var(--dim);font-size:.85rem}
 .sealed.waiting{opacity:.7;font-style:italic}
+html,body{overflow-x:clip}
+@media (max-width:600px){
+  .start-screen{padding:1.5rem 1rem}
+  .join-box{flex-direction:column;text-align:center;gap:.8rem;max-width:100%;box-sizing:border-box}
+  .join-qr{width:min(220px,62vw);height:auto;aspect-ratio:1;box-sizing:border-box}
+  .join-txt{min-width:0;overflow-wrap:anywhere}
+  .join-code{font-size:2rem}
+  .roster{grid-template-columns:1fr}
+  .modal{padding:1.2rem 1rem}
+  #approvals{left:.5rem;right:.5rem;bottom:.5rem;max-width:none}
+  .gt{display:block;overflow-x:auto}
+}
