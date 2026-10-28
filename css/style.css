@@ -263,4 +263,5 @@ html,body{overflow-x:clip}
   .modal{padding:1.2rem 1rem}
   #approvals{left:.5rem;right:.5rem;bottom:.5rem;max-width:none}
   .gt{display:block;overflow-x:auto}
+  .top{position:static;background:#0b0a0d;backdrop-filter:none;padding:.8rem;gap:.6rem}
 }
